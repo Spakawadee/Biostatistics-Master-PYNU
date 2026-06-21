@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Widget A · เลือกมาตรวัด → สรุปด้วยค่ากลางอะไรได้ | Biostat Week 1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#faf6fb; --ink:#36313d; --muted:#8c8598; --line:#ece4f1;
+    --brand:#7c6cdc; --brand-d:#5f4fc0; --brand-soft:#f1ecfc; --card:#fff;
+    --good:#2f9e7d; --good-soft:#e6f6ef;
+    --wrong:#d96a86; --wrong-soft:#fcecf0;
+    --hint:#d99a2b; --hint-soft:#fdf4e0; --hint-ink:#8a6418;
+    --display:'Mali','Sarabun',system-ui,sans-serif;
+    --body:'Sarabun',system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{margin:0;padding:32px 20px 56px;color:var(--ink);font-family:var(--body);line-height:1.6;
+    background:
+      radial-gradient(1100px 560px at 8% -10%, #f1e9fd 0%, transparent 56%),
+      radial-gradient(900px 480px at 104% -4%, #fdebf2 0%, transparent 50%),
+      var(--bg);
+    -webkit-font-smoothing:antialiased;}
+  .wrap{max-width:780px;margin:0 auto;}
+  header{border-bottom:2px dashed #e4daf0;padding-bottom:14px;margin-bottom:20px;}
+  h1{font-family:var(--display);font-weight:700;font-size:clamp(1.45rem,4vw,1.75rem);
+     margin:0 0 6px;color:#4b3f86;line-height:1.25;}
+  .sub{color:var(--muted);font-size:.92rem;}
+  .card{background:var(--card);border:1.5px solid var(--line);border-radius:18px;
+    padding:20px;margin-bottom:16px;box-shadow:0 4px 16px rgba(95,79,192,.06);}
+
+  .ladder{font-size:.9rem;background:var(--brand-soft);border:1.5px solid #e1d6fa;
+    border-radius:16px;padding:16px 20px;margin-bottom:16px;}
+  .ladder-h{font-family:var(--display);font-weight:700;color:var(--brand-d);margin-bottom:10px;}
+  .ladder ol{margin:0;padding-left:20px;} .ladder li{margin-bottom:7px;}
+  .ladder b{color:var(--ink);} .ladder .test{color:#9a73c4;font-weight:600;}
+
+  .bar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+  .pill{flex:1;min-width:96px;text-align:center;border:1.5px solid var(--line);border-radius:14px;
+    padding:11px 8px;background:var(--card);box-shadow:0 3px 10px rgba(95,79,192,.05);}
+  .pill .v{font-family:var(--display);font-size:1.3rem;font-weight:700;display:block;color:var(--brand-d);}
+  .pill .l{font-size:.72rem;color:var(--muted);}
+
+  .vname{font-family:var(--display);font-size:1.2rem;font-weight:700;color:#3a3346;margin:0 0 4px;line-height:1.35;}
+  .vctx{font-size:.88rem;color:var(--muted);margin-bottom:4px;}
+  .vdata{font-size:.86rem;color:var(--ink);background:#fbf8ff;border:1.5px solid var(--line);
+    border-radius:12px;padding:9px 12px;margin:10px 0 0;}
+
+  .q{margin-top:20px;}
+  .q-h{font-family:var(--display);font-weight:700;font-size:1rem;margin-bottom:10px;line-height:1.45;}
+  .q-h .step{display:inline-block;background:var(--brand);color:#fff;
+    border-radius:999px;padding:2px 11px;font-size:.74rem;font-weight:600;margin-right:7px;}
+  .qopt{display:block;width:100%;text-align:left;border:1.5px solid var(--line);background:#fff;
+    border-radius:13px;padding:12px 14px;margin-bottom:9px;cursor:pointer;
+    font-family:var(--body);font-size:.93rem;color:var(--ink);transition:.15s;}
+  .qopt:hover:not(:disabled){border-color:#cdbdf3;background:#faf7ff;}
+  .qopt:disabled{cursor:default;opacity:.97;}
+  .qopt.ok{border-color:var(--good);background:var(--good-soft);font-weight:600;color:#1f7d61;}
+  .qopt.no{border-color:var(--wrong);background:var(--wrong-soft);}
+  .hintbox{font-size:.88rem;background:var(--hint-soft);border:1.5px solid #f1dca0;color:var(--hint-ink);
+    border-radius:13px;padding:11px 14px;margin:6px 0 9px;}
+  .hintbox b{color:var(--hint-ink);}
+  .why{font-size:.9rem;background:var(--good-soft);border:1.5px solid #bfe6d6;color:#2c5648;
+    border-radius:13px;padding:12px 14px;margin-top:6px;}
+  .why b{color:var(--good);}
+
+  .nextrow{margin-top:18px;text-align:right;}
+  .btn{font-family:var(--display);font-weight:600;font-size:.92rem;
+    background:var(--brand);color:#fff;border:1.5px solid var(--brand);
+    padding:10px 20px;border-radius:999px;cursor:pointer;transition:.15s;
+    box-shadow:0 4px 12px rgba(124,108,220,.25);}
+  .btn:hover{background:var(--brand-d);border-color:var(--brand-d);}
+  .btn.ghost{background:transparent;color:var(--brand-d);box-shadow:none;}
+  .btn.ghost:hover{background:var(--brand-soft);}
+  .btn:disabled{opacity:.4;cursor:default;box-shadow:none;}
+
+  .ref{font-size:.84rem;border-collapse:separate;border-spacing:0;width:100%;border:1.5px solid var(--line);
+    border-radius:12px;overflow:hidden;}
+  .ref th,.ref td{border-bottom:1px solid var(--line);border-right:1px solid var(--line);
+    padding:9px 11px;text-align:left;vertical-align:top;}
+  .ref tr:last-child th,.ref tr:last-child td{border-bottom:none;}
+  .ref th:last-child,.ref td:last-child{border-right:none;}
+  .ref th{background:var(--brand-soft);color:var(--brand-d);font-family:var(--display);}
+  details summary{cursor:pointer;font-family:var(--display);font-weight:700;color:var(--brand-d);font-size:.95rem;list-style:none;}
+  details summary::before{content:"▸ ";color:var(--brand);}
+  details[open] summary::before{content:"▾ ";}
+  .done{font-family:var(--display);text-align:center;padding:10px;color:var(--good);font-weight:700;}
+  .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  @media(max-width:560px){
+    body{padding:22px 14px 44px;}
+    .card{padding:16px;border-radius:15px;}
+    .ladder{padding:14px 16px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>เลือกมาตรวัด → สรุปด้วยค่ากลางอะไรได้</h1>
+    <div class="sub">Widget A · Week 1 · จัดประเภทตัวแปร แล้วตัดสินว่าใช้ mean/median/mode อันไหนได้ — ตอบผิดมี hint จนกว่าจะถูก</div>
+  </header>
+
+  <div class="ladder">
+    <div class="ladder-h">บันไดมาตรวัด — ใช้ 3 คำถามนี้ไล่ทีละขั้น</div>
+    <ol>
+      <li><b>จัดอันดับ (มากกว่า/น้อยกว่า) ได้ไหม?</b> <span class="test">ไม่ได้ → Nominal</span></li>
+      <li><b>ได้ แต่ "ช่องว่าง" ระหว่างขั้นเท่ากันไหม?</b> <span class="test">ไม่เท่า/ไม่รู้ → Ordinal</span></li>
+      <li><b>เท่ากัน แล้วมี "0 จริง" (true zero = ไม่มีของสิ่งนั้น) ไหม?</b> <span class="test">ไม่มี → Interval · มี → Ratio</span></li>
+    </ol>
+  </div>
+
+  <div class="bar">
+    <div class="pill"><span class="v" id="pIdx">1 / 8</span><span class="l">ข้อที่</span></div>
+    <div class="pill"><span class="v" id="pFirst">0</span><span class="l">ตอบถูกครั้งแรก (ไม่พึ่ง hint)</span></div>
+    <div class="pill"><span class="v" id="pDone">0</span><span class="l">ทำครบแล้ว</span></div>
+  </div>
+
+  <div class="card" id="exCard"><!-- โจทย์ render ที่นี่ --></div>
+
+  <div class="card">
+    <details>
+      <summary>เปิดดูตารางสรุป: มาตรวัด → ค่ากลางที่ใช้ได้</summary>
+      <div class="table-scroll"><table class="ref" style="margin-top:12px">
+        <tr><th>มาตรวัด</th><th>ลักษณะ</th><th>ค่ากลางที่ใช้ได้</th><th>ตัวอย่างเภสัช/คลินิก</th></tr>
+        <tr><td><b>Nominal</b></td><td>ป้ายชื่อ จัดอันดับไม่ได้</td><td>Mode เท่านั้น (+ นับ/สัดส่วน)</td><td>หมู่เลือด, เพศ, ชนิดยา</td></tr>
+        <tr><td><b>Ordinal</b></td><td>เรียงอันดับได้ แต่ช่องว่างไม่เท่า</td><td>Median, Mode (<b>ไม่ใช้ mean</b>)</td><td>ADR grade, CKD stage, Likert</td></tr>
+        <tr><td><b>Interval</b></td><td>ช่วงเท่ากัน แต่ไม่มี true zero</td><td>Mean, Median, Mode (อัตราส่วนไม่มีความหมาย)</td><td>อุณหภูมิ °C, ปี ค.ศ.</td></tr>
+        <tr><td><b>Ratio</b></td><td>ช่วงเท่ากัน + มี true zero</td><td>ทั้งหมด (+ %CV, geometric mean, อัตราส่วน)</td><td>ความเข้มข้นยา, น้ำหนัก, จำนวนเม็ด</td></tr>
+      </table></div>
+      <div style="font-size:.8rem;color:var(--muted);margin-top:8px">
+        หมายเหตุ: เรื่อง "ค่ากลางใช้อะไรได้" Interval กับ Ratio เหมือนกัน — ต่างกันที่ <b>การคำนวณอัตราส่วน/%CV/GM</b> ซึ่งต้องมี true zero (ต่อบล็อก E–F)
+      </div>
+    </details>
+  </div>
+</div>
+
+<script>
+/* =========================================================================
+   คลังตัวแปร — แก้/เพิ่ม/ลบได้ที่นี่ (ไม่ต้องแตะโค้ดส่วนล่าง)
+   แต่ละข้อใส่:  name=ชื่อตัวแปร · ctx=บริบท · data=ตัวอย่างค่า (จะโชว์ก็ได้/เว้นก็ได้)
+                scale = 'nominal' | 'ordinal' | 'interval' | 'ratio'
+                q1hints = [hint1, hint2] เฉพาะคำถาม "นี่คือมาตรวัดอะไร"
+                explain = สิ่งที่อยากให้นิสิตจำหลังตอบครบ
+   คำถามที่ 2 (ค่ากลาง) และ 3 (true zero) ระบบสร้างให้อัตโนมัติจาก scale
+   ========================================================================= */
+const ITEMS = [
+  { name:"หมู่เลือด (A / B / AB / O)", ctx:"บันทึกหมู่เลือดผู้ป่วยจากการตรวจ ABO typing",
+    data:"ตัวอย่าง: O, A, A, B, O, AB, O",
+    scale:"nominal",
+    q1hints:["พูดว่า 'หมู่ A มากกว่าหมู่ O' ได้ไหม? ถ้าจัดอันดับไม่ได้เลย แสดงว่าเป็นแค่ป้ายชื่อ",
+             "เป็นแค่ชื่อกลุ่ม ไม่มีลำดับ → ขั้นล่างสุดของบันได"],
+    explain:"หมู่เลือดเป็นแค่ป้ายชื่อ จัดอันดับไม่ได้ → สรุปได้แค่ 'หมู่ไหนพบบ่อยสุด' (mode) และนับเป็นความถี่/สัดส่วน" },
+
+  { name:"ระดับความรุนแรงของ ADR (none / mild / moderate / severe)", ctx:"ประเมินอาการไม่พึงประสงค์จากยา",
+    data:"ตัวอย่าง: mild, moderate, none, severe, mild",
+    scale:"ordinal",
+    q1hints:["จัดอันดับได้ (mild < moderate < severe) — ผ่านขั้นที่ 1 แล้ว · ถามต่อ: ช่องว่างจาก mild→moderate เท่ากับ moderate→severe ไหม?",
+             "เรียงได้แต่ระยะห่างไม่เท่า/ไม่รู้ค่าแน่ → Ordinal"],
+    explain:"เรียงลำดับได้แต่ช่องว่างไม่เท่ากัน → ใช้ median/mode · ห้ามใช้ mean เพราะ severe ไม่ได้แปลว่า 'แรงเป็น 4 เท่า' ของ mild" },
+
+  { name:"อุณหภูมิร่างกาย (°C)", ctx:"วัดไข้ผู้ป่วยด้วยปรอท",
+    data:"ตัวอย่าง: 36.8, 37.2, 38.5, 39.0 °C",
+    scale:"interval",
+    q1hints:["จัดอันดับได้และช่วงเท่ากัน (38→39 ห่างเท่ากับ 37→38) ผ่านขั้น 1–2 · ถามต่อ: 0°C แปลว่า 'ไม่มีความร้อนเลย' จริงไหม?",
+             "0°C เป็นแค่จุดอ้างอิง (จุดเยือกแข็งน้ำ) ไม่ใช่ 'ไม่มีความร้อน' → ไม่มี true zero → Interval"],
+    explain:"ช่วงเท่ากันจึงใช้ mean ได้ แต่ไม่มี true zero → 40°C ไม่ใช่ 'ร้อนเป็น 2 เท่า' ของ 20°C → คำนวณอัตราส่วนไม่ได้" },
+
+  { name:"ความเข้มข้นยาในพลาสมา Cmax (ng/mL)", ctx:"ผลเภสัชจลนศาสตร์จากการเจาะเลือด",
+    data:"ตัวอย่าง: 82, 95, 110, 130, 410 ng/mL",
+    scale:"ratio",
+    q1hints:["เป็นตัวเลขต่อเนื่อง ช่วงเท่ากัน ผ่านขั้น 1–2 · ถามต่อ: 0 ng/mL แปลว่า 'ไม่มียาในเลือด' จริงไหม?",
+             "0 = ไม่มียาจริง ๆ → มี true zero → Ratio"],
+    explain:"มี true zero → ใช้ mean/median/mode ได้ และคำนวณ %CV, geometric mean, อัตราส่วนได้ · เกร็ด: ข้อมูล PK มัก 'เบ้ขวา' (ดูค่า 410 ที่ดึงหาง) → median/GM มักเล่าค่ากลางได้ตรงกว่า mean (โยงบล็อก E)" },
+
+  { name:"คะแนนความพึงพอใจ Likert (1=ไม่พอใจมาก … 5=พอใจมาก)", ctx:"แบบสอบถามความพึงพอใจบริการเภสัชกรรม",
+    data:"ตัวอย่าง: 4, 5, 3, 4, 2, 5",
+    scale:"ordinal",
+    q1hints:["ตัวเลข 1–5 หลอกตา! ลองถาม: ความพอใจจาก 1→2 'มากเท่ากับ' 4→5 จริงไหม?",
+             "จริง ๆ คือ 'อันดับ' ที่ใส่เลขกำกับ ช่องว่างไม่เท่า → Ordinal ไม่ใช่ตัวเลขต่อเนื่อง"],
+    explain:"Likert คือ ordinal ที่ปลอมเป็นตัวเลข → รายงาน median (หรือสัดส่วนแต่ละระดับ) ไม่ใช่ mean · นี่คือความผิดที่พบบ่อยมากในงานวิจัย" },
+
+  { name:"จำนวนเม็ดยาที่จ่ายต่อใบสั่ง (เม็ด)", ctx:"นับจากระบบจ่ายยา",
+    data:"ตัวอย่าง: 30, 60, 14, 90, 0",
+    scale:"ratio",
+    q1hints:["นับเป็นจำนวนเต็ม ช่วงเท่ากัน ผ่านขั้น 1–2 · ถามต่อ: '0 เม็ด' แปลว่า 'ไม่ได้จ่ายเลย' จริงไหม?",
+             "0 เม็ด = ไม่มีจริง ๆ → true zero → Ratio (เป็นข้อมูลนับ/count)"],
+    explain:"ข้อมูลนับมี true zero → Ratio · ใช้ mean ได้ (เช่นเฉลี่ย 38.8 เม็ด) แต่ถ้ากระจายเบ้ median อาจเหมาะกว่า" },
+
+  { name:"ระยะของโรคไตเรื้อรัง CKD (G1 / G2 / G3 / G4 / G5)", ctx:"จัดระยะตามค่า eGFR เพื่อปรับขนาดยา",
+    data:"ตัวอย่าง: G2, G3, G1, G4, G3",
+    scale:"ordinal",
+    q1hints:["เรียงความรุนแรงได้ (G1 ดีสุด → G5 แย่สุด) ผ่านขั้น 1 · ถามต่อ: ช่วง eGFR ของแต่ละระยะกว้างเท่ากันไหม?",
+             "เป็นระยะที่เรียงได้แต่ช่วงไม่เท่า → Ordinal (แม้จะมาจาก eGFR ที่เป็น ratio ก็ตาม)"],
+    explain:"พอจับ eGFR (ratio) มา 'แบ่งระยะ' มันกลายเป็น ordinal → รายงานระยะด้วย median/สัดส่วน ไม่ใช่ mean ของหมายเลขระยะ" },
+
+  { name:"เพศ (ชาย / หญิง)", ctx:"ข้อมูลพื้นฐานผู้ป่วยในตาราง baseline",
+    data:"ตัวอย่าง: หญิง, ชาย, หญิง, หญิง, ชาย",
+    scale:"nominal",
+    q1hints:["จัดอันดับ 'ชาย > หญิง' ได้ไหม? ถ้าไม่ได้ = ป้ายชื่อล้วน ๆ",
+             "ไม่มีลำดับ → Nominal"],
+    explain:"เพศเป็น nominal → สรุปด้วยสัดส่วน/ความถี่ และ mode (กลุ่มที่พบบ่อยสุด) เท่านั้น" }
+];
+
+/* ---------- คำถามมาตรฐาน (สร้างจาก scale อัตโนมัติ) ---------- */
+const SCALE_OPTS = [
+  {key:"nominal",  t:"Nominal — ป้ายชื่อ จัดอันดับไม่ได้"},
+  {key:"ordinal",  t:"Ordinal — เรียงอันดับได้ แต่ช่องว่างไม่เท่า"},
+  {key:"interval", t:"Interval — ช่วงเท่ากัน แต่ไม่มี true zero"},
+  {key:"ratio",    t:"Ratio — ช่วงเท่ากัน และมี true zero"}
+];
+// ค่ากลางที่ถูกต้องตามมาตรวัด
+const CT_BY_SCALE = { nominal:"mode", ordinal:"medmode", interval:"all", ratio:"all" };
+const CT_OPTS = [
+  {key:"mode",    t:"Mode เท่านั้น"},
+  {key:"medmode", t:"Median และ Mode (ไม่ใช้ Mean)"},
+  {key:"all",     t:"Mean, Median, Mode ใช้ได้ทั้งหมด"}
+];
+const CT_HINTS = {
+  mode:   ["ตัวแปรนี้จัดอันดับไม่ได้ → หา 'ค่าเฉลี่ย' หรือ 'ค่ากลาง' ไม่ได้ เหลือแค่ 'พบบ่อยสุด'",
+           "Nominal ใช้ได้แค่ Mode"],
+  medmode:["เรียงอันดับได้จึงหา 'ตัวที่อยู่ตรงกลางเมื่อเรียง' (median) ได้ · แต่ช่องว่างไม่เท่า การบวกหารหา mean ไม่มีความหมาย",
+           "Ordinal → Median + Mode (ห้าม Mean)"],
+  all:    ["ช่วงเท่ากันแล้ว การบวก/หารหา mean มีความหมาย → ใช้ได้ทั้ง 3",
+           "Interval/Ratio → Mean, Median, Mode ได้หมด"]
+};
+// true zero (เฉพาะ interval/ratio): ratio = มีความหมาย, interval = ไม่มี
+const TZ_OPTS = [
+  {key:"yes", t:"มีความหมาย — เพราะมี true zero (0 = ไม่มีของสิ่งนั้นจริง ๆ)"},
+  {key:"no",  t:"ไม่มีความหมาย — 0 เป็นแค่จุดอ้างอิง ไม่ใช่ 'ไม่มี'"}
+];
+const TZ_HINTS = ["ถามตัวเอง: ค่า 0 ของตัวแปรนี้ แปลว่า 'ไม่มีของสิ่งนั้นเลย' หรือเป็นแค่จุดสมมติ?",
+                  "true zero มี → อัตราส่วน '2 เท่า' มีความหมาย (Ratio) · true zero ไม่มี → ไม่มีความหมาย (Interval)"];
+
+/* =========================================================================
+   กลไกการเล่น — ปกติไม่ต้องแก้
+   ========================================================================= */
+let idx=0, firstTry=0, doneCount=0;
+
+function buildQuestions(item){
+  const ct = CT_BY_SCALE[item.scale];
+  const qs = [
+    { id:"q1", step:"ขั้น 1", title:"ตัวแปรนี้เป็นมาตรวัดชนิดใด?",
+      opts:SCALE_OPTS, correct:item.scale, hints:item.q1hints,
+      why:item.explain },
+    { id:"q2", step:"ขั้น 2", title:"แล้ว 'ค่ากลาง' (central tendency) ใช้อะไรได้?",
+      opts:CT_OPTS, correct:ct, hints:CT_HINTS[ct],
+      why:"กฎ: จัดอันดับไม่ได้ → Mode · เรียงได้แต่ช่องว่างไม่เท่า → +Median · ช่วงเท่ากัน → +Mean" }
+  ];
+  if(item.scale==="interval" || item.scale==="ratio"){
+    qs.push({ id:"q3", step:"ขั้น 3", title:"พูดว่า 'ค่าหนึ่งเป็น 2 เท่าของอีกค่า' (เช่นคิด %CV / อัตราส่วน) มีความหมายไหม?",
+      opts:TZ_OPTS, correct:(item.scale==="ratio"?"yes":"no"), hints:TZ_HINTS,
+      why:(item.scale==="ratio"
+        ? "มี true zero → คิดอัตราส่วน, %CV, geometric mean ได้ → นี่คือ Ratio"
+        : "ไม่มี true zero → คิดอัตราส่วนไม่ได้ → นี่คือ Interval (ใช้ mean ได้ แต่ '2 เท่า' ไม่มีความหมาย)") });
+  }
+  return qs;
+}
+
+function render(){
+  const item=ITEMS[idx];
+  const qs=buildQuestions(item);
+  // เก็บสถานะแต่ละคำถาม: attempts, solved
+  item._state = qs.map(()=>({attempts:0,solved:false,gotFirst:true}));
+  item._qs = qs;
+
+  const dataLine = item.data ? `<div class="vdata">${item.data}</div>` : "";
+  let html = `<div class="vname">${item.name}</div>
+    <div class="vctx">บริบท: ${item.ctx}</div>${dataLine}`;
+  // โชว์เฉพาะคำถามแรกก่อน (คำถามถัดไปจะปรากฏเมื่อตอบข้อก่อนถูก)
+  html += renderQ(qs[0],0,true);
+  for(let i=1;i<qs.length;i++) html += `<div id="qslot-${i}"></div>`;
+  html += `<div class="nextrow" id="nextrow" style="display:none">
+      <button class="btn" id="nextBtn" onclick="nextItem()">ข้อต่อไป →</button>
+    </div>`;
+  document.getElementById('exCard').innerHTML = html;
+  updateBar();
+}
+
+function renderQ(q,qi,visible){
+  const opts=q.opts.map((o,oi)=>
+    `<button class="qopt" data-q="${qi}" data-o="${oi}" onclick="answer(${qi},${oi})">${o.t}</button>`
+  ).join('');
+  return `<div class="q" id="q-${qi}" style="${visible?'':'display:none'}">
+      <div class="q-h"><span class="step">${q.step}</span>${q.title}</div>
+      <div id="opts-${qi}">${opts}</div>
+      <div id="fb-${qi}"></div>
+    </div>`;
+}
+
+function answer(qi,oi){
+  const item=ITEMS[idx], q=item._qs[qi], st=item._state[qi];
+  if(st.solved) return;
+  const chosen=q.opts[oi];
+  const isOK = (chosen.key===q.correct);
+  const btn=document.querySelector(`.qopt[data-q="${qi}"][data-o="${oi}"]`);
+
+  if(isOK){
+    // ถูก → เขียว ล็อกทุกปุ่ม โชว์เหตุผล แล้วเปิดข้อถัดไป
+    document.querySelectorAll(`.qopt[data-q="${qi}"]`).forEach(b=>b.disabled=true);
+    btn.classList.add('ok');
+    document.getElementById(`fb-${qi}`).innerHTML =
+      `<div class="why"><b>ถูกต้อง</b> — ${q.why}</div>`;
+    st.solved=true;
+    if(st.gotFirst && st.attempts===0) firstTry++;
+    advance(qi);
+  } else {
+    // ผิด → ปุ่มนั้นแดง+ปิด, นับครั้ง, โชว์ hint ไล่ระดับ
+    btn.classList.add('no'); btn.disabled=true;
+    st.gotFirst=false;
+    const hint = q.hints[st.attempts];      // hint ตามจำนวนครั้งที่ผิด
+    st.attempts++;
+    const fb=document.getElementById(`fb-${qi}`);
+    if(hint){
+      fb.innerHTML = `<div class="hintbox"><b>ยังไม่ใช่ · คำใบ้ ${st.attempts}:</b> ${hint}</div>`;
+    } else {
+      // หมด hint → เฉลย: ไฮไลต์ตัวถูกให้กดต่อ
+      fb.innerHTML = `<div class="hintbox"><b>คำใบ้สุดท้าย:</b> ลองกดตัวเลือกที่ขึ้นกรอบเขียว แล้วอ่านเหตุผล</div>`;
+      document.querySelectorAll(`.qopt[data-q="${qi}"]`).forEach(b=>{
+        if(q.opts[+b.dataset.o].key===q.correct){ b.classList.add('ok'); b.disabled=false; }
+      });
+    }
+  }
+}
+
+function advance(qi){
+  const item=ITEMS[idx];
+  const next=qi+1;
+  if(next < item._qs.length){
+    document.getElementById(`qslot-${next}`).innerHTML = renderQ(item._qs[next],next,true);
+  } else {
+    // ตอบครบทุกข้อ → ปุ่มข้อต่อไป
+    doneCount = Math.max(doneCount, idx+1);
+    document.getElementById('nextrow').style.display='block';
+    if(idx===ITEMS.length-1)
+      document.getElementById('nextBtn').textContent='เริ่มใหม่ทั้งหมด ↻';
+    updateBar();
+  }
+}
+
+function nextItem(){
+  if(idx>=ITEMS.length-1){ idx=0; firstTry=0; doneCount=0; }
+  else idx++;
+  render();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function updateBar(){
+  document.getElementById('pIdx').textContent = (idx+1)+' / '+ITEMS.length;
+  document.getElementById('pFirst').textContent = firstTry;
+  document.getElementById('pDone').textContent = doneCount;
+}
+
+render();
+</script>
+</body>
+</html>

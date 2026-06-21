@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Type I vs Type II — เห็นภาพ | Biostat Week 3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#faf6fb; --ink:#36313d; --muted:#8c8598; --line:#ece4f1;
+    --brand:#7c6cdc; --brand-d:#5f4fc0; --brand-soft:#f1ecfc; --card:#fff;
+    --typeI:#d96a86;   /* เตือนภัยลวง (Type I) */
+    --typeII:#d99a2b;  /* พลาดของจริง (Type II) */
+    --power:#2f9e7d;   /* จับของจริงได้ (power) */
+    --display:'Mali','Sarabun',system-ui,sans-serif;
+    --body:'Sarabun',system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{margin:0;padding:32px 20px 56px;color:var(--ink);font-family:var(--body);line-height:1.6;
+    background:
+      radial-gradient(1100px 560px at 8% -10%, #f1e9fd 0%, transparent 56%),
+      radial-gradient(900px 480px at 104% -4%, #fdebf2 0%, transparent 50%),
+      var(--bg);
+    -webkit-font-smoothing:antialiased;}
+  .wrap{max-width:780px;margin:0 auto;}
+  header{border-bottom:2px dashed #e4daf0;padding-bottom:14px;margin-bottom:18px;}
+  h1{font-family:var(--display);font-weight:700;font-size:clamp(1.45rem,4vw,1.8rem);margin:0 0 6px;color:#4b3f86;line-height:1.25;}
+  .sub{color:var(--muted);font-size:.9rem;}
+  .mantra{font-size:.95rem;line-height:1.7;
+    background:var(--card);border:1.5px solid var(--line);border-radius:16px;
+    padding:16px 18px;margin-bottom:16px;box-shadow:0 4px 16px rgba(95,79,192,.06);}
+  .mantra .i{color:var(--typeI);font-weight:700;}
+  .mantra .ii{color:var(--typeII);font-weight:700;}
+  .card{background:var(--card);border:1.5px solid var(--line);border-radius:18px;
+    padding:20px;margin-bottom:16px;box-shadow:0 4px 16px rgba(95,79,192,.06);}
+  canvas{width:100%;height:auto;display:block;border-radius:12px;touch-action:none;background:#fff;}
+  .hint-drag{font-size:.82rem;color:var(--brand-d);font-weight:600;text-align:center;margin-top:8px;}
+  .readout{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;}
+  .stat{flex:1;min-width:96px;text-align:center;border-radius:14px;padding:12px 6px;border:1.5px solid var(--line);}
+  .stat .v{font-family:var(--display);font-size:1.4rem;font-weight:700;display:block;}
+  .stat .l{font-size:.74rem;color:var(--muted);line-height:1.4;}
+  .stat.i{background:#fcecf0;border-color:#f1c3cf;} .stat.i .v{color:var(--typeI);}
+  .stat.ii{background:#fdf4e0;border-color:#f1dca0;} .stat.ii .v{color:var(--typeII);}
+  .stat.pw{background:#e6f6ef;border-color:#bfe6d6;} .stat.pw .v{color:var(--power);}
+  .controls{font-size:.92rem;margin-top:18px;}
+  .ctl{margin-bottom:14px;}
+  .ctl label{display:block;margin-bottom:6px;}
+  .ctl .val{font-family:var(--display);color:var(--brand-d);font-weight:700;}
+  input[type=range]{width:100%;accent-color:var(--brand);height:6px;}
+  .btnrow{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;}
+  .btn{font-family:var(--display);font-weight:600;font-size:.86rem;
+    background:transparent;color:var(--brand-d);border:1.5px solid var(--brand);
+    padding:8px 14px;border-radius:999px;cursor:pointer;transition:.15s;}
+  .btn:hover{background:var(--brand-soft);}
+  .grid2x2{font-size:.84rem;border-collapse:separate;border-spacing:0;width:100%;margin-top:16px;
+    border:1.5px solid var(--line);border-radius:12px;overflow:hidden;}
+  .grid2x2 td,.grid2x2 th{border-bottom:1px solid var(--line);border-right:1px solid var(--line);padding:9px;text-align:center;line-height:1.4;}
+  .grid2x2 tr:last-child td,.grid2x2 tr:last-child th{border-bottom:none;}
+  .grid2x2 td:last-child,.grid2x2 th:last-child{border-right:none;}
+  .grid2x2 th{background:var(--brand-soft);color:var(--brand-d);font-family:var(--display);font-weight:700;}
+  .cellI{background:#fcecf0;color:var(--typeI);font-weight:700;}
+  .cellII{background:#fdf4e0;color:var(--typeII);font-weight:700;}
+  .cellOK{color:var(--muted);}
+  .assume{background:var(--brand-soft);border:1.5px solid #e1d6fa;
+    border-radius:16px;padding:16px 20px;margin-bottom:16px;
+    font-size:.88rem;color:var(--ink);}
+  .assume-h{font-family:var(--display);font-weight:700;color:var(--brand-d);margin-bottom:10px;}
+  .assume ul{margin:0;padding-left:18px;} .assume li{margin-bottom:6px;line-height:1.55;}
+  .quiz-h{font-family:var(--display);font-weight:700;margin:0 0 4px;font-size:1.05rem;color:#4b3f86;}
+  .quiz-q{font-size:.97rem;margin-bottom:10px;line-height:1.5;}
+  .quiz-q .do{display:inline-block;background:var(--brand-soft);border:1.5px solid #e1d6fa;
+    border-radius:999px;padding:3px 12px;font-size:.82rem;color:var(--brand-d);font-weight:600;margin-bottom:8px;}
+  .qopt{display:block;width:100%;text-align:left;border:1.5px solid var(--line);background:#fff;color:var(--ink);
+    border-radius:13px;padding:11px 14px;margin-bottom:9px;cursor:pointer;
+    font-family:var(--body);font-size:.92rem;line-height:1.5;transition:.15s;}
+  .qopt:hover:not(:disabled){border-color:#cdbdf3;background:#faf7ff;}
+  .qopt:disabled{cursor:default;}
+  .qopt.ok{border-color:var(--power);background:#e6f6ef;font-weight:600;}
+  .qopt.no{border-color:var(--typeI);background:#fcecf0;}
+  .qfb{font-size:.9rem;line-height:1.6;padding:11px 14px;border-radius:12px;margin-top:6px;
+    background:var(--brand-soft);border:1.5px solid #e1d6fa;color:#3a3346;}
+  .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  @media(max-width:560px){
+    body{padding:22px 14px 44px;}
+    .card{padding:16px;border-radius:15px;}
+    .assume,.mantra{padding:14px 16px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Type I vs Type II — เห็นภาพ</h1>
+    <div class="sub">Week 3 · ลากเส้นตัดสินใจ แล้วดูว่า error สองแบบแลกกันอย่างไร</div>
+  </header>
+
+  <div class="mantra">
+    เส้นซ้ายคือโลกที่ <b>ยาไม่มีผลจริง</b> · เส้นขวาคือโลกที่ <b>ยามีผลจริง</b><br>
+    <span class="i">Type I = เตือนภัยลวง</span> → ตะโกนว่า "ยาได้ผล!" ทั้งที่จริง ๆ มันแค่บังเอิญ<br>
+    <span class="ii">Type II = พลาดของจริง</span> → สรุปว่า "ไม่ได้ผล" ทั้งที่จริง ๆ ยามีผล
+  </div>
+
+  <div class="assume">
+    <div class="assume-h">วิธีอ่านกราฟนี้ · สมมติฐานที่ใช้</div>
+    <ul>
+      <li><b>การทดสอบ:</b> ทางเดียว (one-sided) ใช้การประมาณแบบ <b>z</b> (สมมติว่า σ ทราบค่า = 10).
+        t-test ใช้ตรรกะเดียวกัน เพียงแต่เส้นโค้งเป็น t และค่าวิกฤตสูงกว่าเล็กน้อยเมื่อ n เล็ก</li>
+      <li><b>H₀:</b> μ(ยาใหม่) − μ(เดิม) = 0 — ยาไม่มีผล → เส้นโค้ง<b>ซ้าย</b></li>
+      <li><b>H₁:</b> μ(ยาใหม่) − μ(เดิม) &gt; 0 — ยาลดความดันได้มากกว่า → ทิศปฏิเสธอยู่ทาง<b>ขวา</b></li>
+      <li><b>แกนนอน:</b> ผลต่างเฉลี่ยที่สังเกตได้ (mmHg) · <b>ความกว้างเส้นโค้ง</b> = SE = σ/√n</li>
+      <li><b>α</b> = พื้นที่หาง H₀ ทางขวาของเส้น · <b>β</b> = พื้นที่ Ha ทางซ้ายของเส้น · <b>power</b> = 1−β</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <canvas id="cv" width="1400" height="640"></canvas>
+    <div class="hint-drag" id="dragHint" style="visibility:hidden">↔ ลากเส้นประแนวตั้ง (เส้นตัดสินใจ) ได้โดยตรง</div>
+
+    <div class="readout">
+      <div class="stat i"><span class="v" id="vA">–</span><span class="l">Type I (α)<br>เตือนภัยลวง</span></div>
+      <div class="stat ii"><span class="v" id="vB">–</span><span class="l">Type II (β)<br>พลาดของจริง</span></div>
+      <div class="stat pw"><span class="v" id="vP">–</span><span class="l">Power (1−β)<br>จับของจริงได้</span></div>
+    </div>
+
+    <div class="table-scroll"><table class="grid2x2">
+      <tr><th></th><th>ความจริง: ยาไม่มีผล</th><th>ความจริง: ยามีผล</th></tr>
+      <tr><th>เราสรุป: มีผล (reject H0)</th><td class="cellI">Type I<br>เตือนภัยลวง</td><td class="cellOK">ถูกต้อง ✓<br>(power)</td></tr>
+      <tr><th>เราสรุป: ไม่มีผล (fail to reject)</th><td class="cellOK">ถูกต้อง ✓</td><td class="cellII">Type II<br>พลาดของจริง</td></tr>
+    </table></div>
+
+    <div class="controls">
+      <div class="ctl">
+        <label>ผลจริงของยา (effect ที่แท้จริง): <span class="val" id="lblD">5</span> mmHg</label>
+        <input type="range" id="sD" min="0" max="10" step="0.5" value="5">
+      </div>
+      <div class="ctl">
+        <label>ขนาดตัวอย่างต่อกลุ่ม (n): <span class="val" id="lblN">30</span></label>
+        <input type="range" id="sN" min="5" max="200" step="1" value="30">
+      </div>
+      <div class="ctl">
+        <label>โหมดการเรียนรู้:</label>
+        <label style="display:block;margin:4px 0;font-weight:normal">
+          <input type="radio" name="mode" value="fixAlpha" checked onchange="setMode('fixAlpha')">
+          ตรึง <b>α = 0.05</b> (เส้นเลื่อนเองตาม n — α คงที่ เห็นแค่ β/power เปลี่ยน)
+        </label>
+        <label style="display:block;margin:4px 0;font-weight:normal">
+          <input type="radio" name="mode" value="fixLine" onchange="setMode('fixLine')">
+          ตรึง<b>เส้นตัดสินใจ</b> (ลากเองได้ — เปลี่ยน n แล้ว α &amp; β ขยับตามทั้งคู่)
+        </label>
+      </div>
+      <div class="btnrow">
+        <button class="btn" onclick="shrinkN()">ลด n เหลือ 10 → ดูผลต่อ error</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="quiz-h">ลองเล่นกราฟแล้วตอบเอง (เรียนรู้ด้วยตนเอง)</div>
+    <div class="sub" style="margin-bottom:14px">แต่ละข้อบอกให้ลองปรับกราฟก่อน แล้วค่อยเลือกคำตอบ — ตอบแล้วเห็นเฉลยทันที</div>
+    <div id="quiz"></div>
+  </div>
+</div>
+
+<script>
+/* =========================================================================
+   ถาม-ตอบเรียนรู้กราฟ — แก้/เพิ่มข้อได้ที่นี่
+   ========================================================================= */
+const QUIZ = [
+  {
+    do: "อยู่ในโหมด \u201cตรึง α = 0.05\u201d แล้วลากสไลด์ n จาก 30 ไป 200",
+    q: "power (พื้นที่เขียว) เกิดอะไรขึ้น?",
+    options: [
+      { t: "เพิ่มขึ้น — จับของจริงได้ง่ายขึ้น", ok: true },
+      { t: "ลดลง", ok: false },
+      { t: "คงที่ ไม่เปลี่ยน", ok: false }
+    ],
+    why: "n โต → SE = σ/√n เล็กลง → เส้นโค้งผอมลง ซ้อนกันน้อยลง → β ลด → power เพิ่ม โดย α ยังคง 5% เพราะโหมดนี้เลื่อนเส้นให้อัตโนมัติ"
+  },
+  {
+    do: "สลับไปโหมด \u201cตรึงเส้นตัดสินใจ\u201d (อย่าขยับเส้น) แล้วเพิ่ม n",
+    q: "α (หางแดง) เป็นอย่างไร?",
+    options: [
+      { t: "ลดลง", ok: true },
+      { t: "คงที่ 5% เสมอ", ok: false },
+      { t: "เพิ่มขึ้น", ok: false }
+    ],
+    why: "เมื่อตรึงเส้นเป็นค่า mmHg คงที่ พอ SE เล็กลง หางแดงที่เลยเส้นไปก็เล็กลง → α ลด (และ β ก็ลดด้วย) นี่คือเหตุผลว่า \u201cα คงที่\u201d จริงเฉพาะตอนเรายอมเลื่อนเส้นตาม n"
+  },
+  {
+    do: "ลากสไลด์ \u201cผลจริงของยา\u201d ลงเข้าใกล้ 0",
+    q: "Type II (พื้นที่เหลือง) เป็นอย่างไร และเพราะอะไร?",
+    options: [
+      { t: "เพิ่มขึ้น เพราะยอดเขาสองลูกเข้าใกล้กัน ซ้อนกันมาก ตรวจจับยาก", ok: true },
+      { t: "ลดลง เพราะ effect เล็กแปลว่าตรวจง่าย", ok: false },
+      { t: "ไม่เกี่ยวกับ effect", ok: false }
+    ],
+    why: "effect เล็ก = ยอดเขาสองลูกใกล้กัน = เส้นโค้งซ้อนกันมาก = พลาดของจริงง่ายขึ้น ต้องชดเชยด้วย n ที่มากขึ้นจึงจะได้ power เท่าเดิม"
+  },
+  {
+    do: "ทบทวนสิ่งที่เพิ่งเห็นจากสองโหมด",
+    q: "สรุป — α เปลี่ยนตาม n ไหม?",
+    options: [
+      { t: "ขึ้นกับว่าเราตรึงอะไร: ถ้าตรึงระดับ α (เลื่อนเส้นตาม n) → α คงที่; ถ้าตรึงเส้นเป็นค่าดิบ → α เปลี่ยนตาม n", ok: true },
+      { t: "เปลี่ยนตาม n เสมอ", ok: false },
+      { t: "คงที่เสมอ ไม่ขึ้นกับอะไร", ok: false }
+    ],
+    why: "หัวใจของกราฟนี้: α ในฐานะ \u201cระดับนัยสำคัญที่เราเลือก\u201d ไม่ได้มาจาก n — แต่จะรักษาให้คงที่ได้ต้องเลื่อนค่าวิกฤตตาม n ถ้าตรึงเส้นไว้เฉย ๆ ทั้ง α และ β จะเปลี่ยนพร้อมกัน"
+  }
+];
+
+function renderQuiz(){
+  const box=document.getElementById('quiz');
+  box.innerHTML = QUIZ.map((item,qi)=>{
+    const opts=item.options.map((o,oi)=>
+      `<button class="qopt" data-q="${qi}" data-o="${oi}" onclick="answerQ(${qi},${oi})">${o.t}</button>`
+    ).join('');
+    return `<div class="quiz-q" style="margin-bottom:20px">
+      <span class="do">ลองทำ: ${item.do}</span><br>
+      <b>${item.q}</b>
+      <div style="margin-top:8px">${opts}</div>
+      <div id="qfb-${qi}"></div>
+    </div>`;
+  }).join('');
+}
+function answerQ(qi,oi){
+  const item=QUIZ[qi], chosen=item.options[oi];
+  document.querySelectorAll(`.qopt[data-q="${qi}"]`).forEach(b=>{
+    const o=+b.dataset.o;
+    if(item.options[o].ok) b.classList.add('ok');
+    if(o===oi && !chosen.ok) b.classList.add('no');
+    b.disabled=true;
+  });
+  document.getElementById(`qfb-${qi}`).innerHTML =
+    `<div class="qfb">${chosen.ok?'<b>ถูกต้อง</b> ':'<b>ลองคิดใหม่ — </b>'}${item.why}</div>`;
+}
+renderQuiz();
+</script>
+
+<script>
+/* ---------- ค่าที่ตั้งได้ ---------- */
+const SIGMA = 10;        // SD ของผลลัพธ์ (mmHg) — แก้ได้
+const ZA = 1.645;        // ค่า z สำหรับ α = 0.05 ด้านเดียว
+let delta = 5;           // ผลจริงของยา (ระยะห่างของยอดเขาสองลูก)
+let n = 30;              // ขนาดตัวอย่างต่อกลุ่ม
+let c = null;            // ตำแหน่งเส้นตัดสินใจ (mmHg) — null = ยังไม่ตั้ง
+let mode = 'fixAlpha';   // เริ่มที่ตรึง α (มาตรฐาน) แล้วค่อยให้ลองโหมดตรึงเส้น
+
+/* ---------- คณิตศาสตร์ ---------- */
+function erf(x){ // Abramowitz–Stegun 7.1.26
+  const s=x<0?-1:1; x=Math.abs(x);
+  const t=1/(1+0.3275911*x);
+  const y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);
+  return s*y;
+}
+function normCDF(x,mu,sd){ return 0.5*(1+erf((x-mu)/(sd*Math.SQRT2))); }
+function normPDF(x,mu,sd){ return Math.exp(-0.5*((x-mu)/sd)**2)/(sd*Math.sqrt(2*Math.PI)); }
+function SE(){ return SIGMA/Math.sqrt(n); }
+
+/* ---------- canvas ---------- */
+const cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+// fallback เผื่อเบราว์เซอร์เก่าไม่มี roundRect
+if(!ctx.roundRect){ ctx.roundRect=function(x,y,w,h,r){ this.moveTo(x+r,y);
+  this.arcTo(x+w,y,x+w,y+h,r); this.arcTo(x+w,y+h,x,y+h,r);
+  this.arcTo(x,y+h,x,y,r); this.arcTo(x,y,x+w,y,r); this.closePath(); return this; }; }
+const W=cv.width, H=cv.height, padL=20, padR=20, padT=70, padB=96;
+const plotW=W-padL-padR, plotH=H-padT-padB;
+
+function xrange(){ return [-10, 20]; }   // แกน x คงที่ (ไม้บรรทัดนิ่ง) เพื่อให้เห็นการเปลี่ยนแปลงชัด
+function xToPx(x){ const [lo,hi]=xrange(); return padL+(x-lo)/(hi-lo)*plotW; }
+function pxToX(px){ const [lo,hi]=xrange(); return lo+(px-padL)/plotW*(hi-lo); }
+
+function draw(){
+  const se=SE(), [lo,hi]=xrange();
+  if(c===null) c=1.645*se; // เริ่มที่ α≈0.05 ด้านเดียว
+  ctx.clearRect(0,0,W,H);
+
+  // หา peak สูงสุดเพื่อ scale แกน y
+  const peak=normPDF(0,0,se);
+  const yTo=(d)=> padT+plotH-(d/peak)*plotH*0.92;
+
+  // เตรียมจุดของเส้นโค้งสองเส้น
+  const N=400; const xs=[], h0=[], ha=[];
+  for(let i=0;i<=N;i++){ const x=lo+(hi-lo)*i/N; xs.push(x);
+    h0.push(normPDF(x,0,se)); ha.push(normPDF(x,delta,se)); }
+
+  // ระบายพื้นที่: Type I = หาง H0 ขวาของ c ; Type II = ส่วน Ha ซ้ายของ c ; Power = ส่วน Ha ขวาของ c
+  function fillRegion(arr,mu,cond,color){
+    ctx.beginPath(); ctx.moveTo(xToPx(lo),yTo(0));
+    for(let i=0;i<=N;i++){ if(cond(xs[i])) ctx.lineTo(xToPx(xs[i]),yTo(arr[i])); else ctx.lineTo(xToPx(xs[i]),yTo(0)); }
+    ctx.lineTo(xToPx(hi),yTo(0)); ctx.closePath(); ctx.fillStyle=color; ctx.fill();
+  }
+  fillRegion(ha,delta,x=>x>=c,'rgba(47,158,125,.20)');     // power
+  fillRegion(ha,delta,x=>x<c, 'rgba(217,154,43,.42)');     // Type II
+  fillRegion(h0,0,    x=>x>=c,'rgba(217,106,134,.42)');    // Type I
+
+  // version stamp (ไว้เช็คว่าเบราว์เซอร์โหลดไฟล์ล่าสุดจริง)
+  ctx.fillStyle='#b9b1a2'; ctx.font='14px sans-serif'; ctx.textAlign='right'; ctx.textBaseline='top';
+  ctx.fillText('build v6 · delta(วาดจริง)='+delta+' · n='+n, W-padR, 6); ctx.textBaseline='alphabetic';
+
+  // วาดเส้นโค้ง
+  function curve(arr,color){ ctx.beginPath();
+    for(let i=0;i<=N;i++){ const px=xToPx(xs[i]),py=yTo(arr[i]); i?ctx.lineTo(px,py):ctx.moveTo(px,py);} 
+    ctx.strokeStyle=color; ctx.lineWidth=3; ctx.stroke(); }
+  curve(h0,'#a59bb3'); curve(ha,'#36313d');
+
+  // แกน x
+  const axisY=yTo(0);
+  ctx.strokeStyle='#b9b1a2'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(padL,axisY); ctx.lineTo(W-padR,axisY); ctx.stroke();
+
+  // ขีดบอกค่า + ตัวเลขบนแกน x (เลือก step กลม ๆ ให้ได้ ~7 ขีด)
+  function niceStep(raw){ const p=Math.pow(10,Math.floor(Math.log10(raw))); const f=raw/p;
+    return (f<1.5?1:f<3?2:f<7?5:10)*p; }
+  const step=niceStep((hi-lo)/7);
+  const first=Math.ceil(lo/step)*step;
+  ctx.font='20px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='top';
+  for(let v=first; v<=hi+1e-9; v+=step){
+    const px=xToPx(v); const isZero=Math.abs(v)<1e-9;
+    ctx.strokeStyle=isZero?'#7a8580':'#cfc7b8'; ctx.lineWidth=isZero?2:1;
+    ctx.beginPath(); ctx.moveTo(px,axisY); ctx.lineTo(px,axisY+7); ctx.stroke();
+    ctx.fillStyle=isZero?'#1f2421':'#5c6660';
+    ctx.fillText((Math.round(v*10)/10).toString(), px, axisY+10);
+  }
+  ctx.textBaseline='alphabetic';
+
+  // ชื่อแกน x
+  ctx.fillStyle='#1f2421'; ctx.font='bold 21px sans-serif'; ctx.textAlign='center';
+  ctx.fillText('ผลต่างเฉลี่ยที่สังเกตได้ระหว่างสองกลุ่ม (mmHg)', W/2, axisY+44);
+  ctx.fillStyle='#7a8580'; ctx.font='18px sans-serif';
+  ctx.fillText('ค่ายิ่งไปทางขวา = ยายิ่งลดความดันได้มากกว่า', W/2, axisY+68);
+
+  // เส้นตัดสินใจ (เส้นประลากได้)
+  const cx=xToPx(c);
+  ctx.setLineDash([8,6]); ctx.strokeStyle='#5f4fc0'; ctx.lineWidth=2.5;
+  ctx.beginPath(); ctx.moveTo(cx,padT-10); ctx.lineTo(cx,axisY+7); ctx.stroke(); ctx.setLineDash([]);
+  // จับเส้น (handle)
+  ctx.fillStyle='#5f4fc0'; ctx.beginPath(); ctx.arc(cx,padT-10,9,0,7); ctx.fill();
+  ctx.fillStyle='#fff'; ctx.font='bold 22px sans-serif'; ctx.textAlign='center'; ctx.fillText('↔',cx,padT-3);
+
+  // ป้ายค่าของเส้นตัดสินใจ (กล่องติดเส้น) — เลื่อนลงกลางกราฟไม่ให้ทับป้ายยอดเขา
+  const cLabel = (mode==='fixAlpha' ? 'critical value (α=0.05)' : 'critical value');
+  const cVal = (Math.round(c*10)/10).toFixed(1)+' mmHg';
+  ctx.font='bold 25px sans-serif'; ctx.textAlign='left';
+  const boxW=Math.max(ctx.measureText(cLabel).width, ctx.measureText(cVal).width)+22;
+  let bx=cx+14; if(bx+boxW>W-padR) bx=cx-14-boxW;   // กันล้นขอบขวา
+  const by=padT+plotH*0.42;                          // ลงมากลางกราฟ พ้นกล่อง "ยามีผลจริง"
+  ctx.fillStyle='rgba(255,255,255,.95)'; ctx.strokeStyle='#5f4fc0'; ctx.lineWidth=1.6;
+  ctx.beginPath(); ctx.roundRect(bx,by,boxW,74,10); ctx.fill(); ctx.stroke();
+  ctx.fillStyle='#8c8598'; ctx.font='bold 20px sans-serif'; ctx.fillText(cLabel,bx+11,by+29);
+  ctx.fillStyle='#36313d'; ctx.font='bold 25px sans-serif'; ctx.fillText(cVal,bx+11,by+60);
+
+  // ป้ายกำกับยอดเขา (เหลื่อมแนวตั้งกันชนกันเมื่อ effect เล็ก)
+  ctx.font='bold 25px sans-serif'; ctx.textAlign='center';
+  ctx.fillStyle='#7a8580'; ctx.fillText('ยาไม่มีผล (0 mmHg)', xToPx(0), yTo(peak)-40);
+  ctx.fillStyle='#1f2421'; ctx.fillText('ยามีผลจริง ('+delta+' mmHg)', xToPx(delta), yTo(normPDF(delta,delta,se))-12);
+
+  // ป้ายบอกความหมายซ้าย/ขวาของเส้น (เหนือแกน)
+  ctx.font='18px sans-serif'; ctx.fillStyle='#8a8276';
+  ctx.textAlign='right'; ctx.fillText('← ซ้ายเส้น: สรุป "ยาไม่มีผล"', cx-14, axisY-10);
+  ctx.textAlign='left';  ctx.fillText('ขวาเส้น: สรุป "ยามีผล" →', cx+14, axisY-10);
+}
+
+function recompute(){
+  const se=SE();
+  const a=1-normCDF(c,0,se);       // Type I
+  const b=normCDF(c,delta,se);     // Type II
+  document.getElementById('vA').textContent=(a*100).toFixed(1)+'%';
+  document.getElementById('vB').textContent=(b*100).toFixed(1)+'%';
+  document.getElementById('vP').textContent=((1-b)*100).toFixed(1)+'%';
+}
+function refresh(){
+  if(mode==='fixAlpha'){ c = ZA*SE(); }     // ตรึง α: เลื่อนเส้นตาม n อัตโนมัติ
+  else if(c===null){ c = ZA*SE(); }          // ตั้งค่าเริ่มต้นครั้งแรก
+  draw(); recompute();
+}
+
+/* ---------- ลากเส้น ---------- */
+let dragging=false;
+function clientToCanvasX(e){
+  const r=cv.getBoundingClientRect();
+  const px=(e.touches?e.touches[0].clientX:e.clientX)-r.left;
+  return px*(cv.width/r.width);
+}
+function startDrag(e){ if(mode!=='fixLine') return; dragging=true; moveDrag(e); }
+function moveDrag(e){ if(!dragging||mode!=='fixLine')return; e.preventDefault();
+  const px=clientToCanvasX(e); c=pxToX(px);
+  const [lo,hi]=xrange(); c=Math.max(lo,Math.min(hi,c)); refresh(); }
+function endDrag(){ dragging=false; }
+cv.addEventListener('mousedown',startDrag); window.addEventListener('mousemove',moveDrag); window.addEventListener('mouseup',endDrag);
+cv.addEventListener('touchstart',startDrag,{passive:false}); cv.addEventListener('touchmove',moveDrag,{passive:false}); cv.addEventListener('touchend',endDrag);
+
+/* ---------- sliders & ปุ่ม ---------- */
+document.getElementById('sD').addEventListener('input',e=>{ delta=+e.target.value;
+  document.getElementById('lblD').textContent=delta; refresh(); });
+document.getElementById('sN').addEventListener('input',e=>{ n=+e.target.value;
+  document.getElementById('lblN').textContent=n; refresh(); });
+function setMode(m){
+  mode = m;
+  if(m==='fixAlpha'){ c = ZA*SE(); }
+  document.getElementById('dragHint').style.visibility = (m==='fixLine') ? 'visible' : 'hidden';
+  refresh();
+}
+function shrinkN(){ n=10; document.getElementById('sN').value=10; document.getElementById('lblN').textContent=10; refresh(); }
+
+refresh();
+</script>
+</body>
+</html>

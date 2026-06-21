@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ตีความ p-value ให้ถูก — Biostat Week 3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#faf6fb; --ink:#36313d; --muted:#8c8598; --line:#ece4f1;
+    --brand:#7c6cdc; --brand-d:#5f4fc0; --brand-soft:#f1ecfc; --card:#fff;
+    --correct:#2f9e7d; --correct-soft:#e6f6ef;
+    --wrong:#d96a86; --wrong-soft:#fcecf0;
+    --hint-bg:#fdf4e0; --hint-line:#f1dca0; --hint-ink:#8a6418;
+    --display:'Mali','Sarabun',system-ui,sans-serif;
+    --body:'Sarabun',system-ui,-apple-system,sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html{-webkit-text-size-adjust:100%;}
+  body {
+    margin:0; padding:32px 20px 56px; color:var(--ink);
+    font-family:var(--body); line-height:1.62;
+    background:
+      radial-gradient(1100px 560px at 8% -10%, #f1e9fd 0%, transparent 56%),
+      radial-gradient(900px 480px at 104% -4%, #fdebf2 0%, transparent 50%),
+      var(--bg);
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap { max-width: 740px; margin: 0 auto; }
+  header { border-bottom: 2px dashed #e4daf0; padding-bottom: 16px; margin-bottom: 22px; }
+  h1 { font-family:var(--display); font-weight:700; font-size:clamp(1.5rem,4vw,1.85rem);
+    margin:0 0 6px; color:#4b3f86; line-height:1.25; }
+  .sub { color: var(--muted); font-size: 0.92rem; }
+  .progress { font-size: 0.88rem; color: var(--brand-d); font-weight:600; margin-bottom: 14px; }
+  .card {
+    background: var(--card); border: 1.5px solid var(--line);
+    border-radius: 18px; padding: 24px; margin-bottom: 18px;
+    box-shadow: 0 4px 16px rgba(95,79,192,.06);
+  }
+  .scenario { font-size: 1.06rem; margin-bottom: 6px; line-height:1.55; }
+  .result-box {
+    background: var(--brand-soft); border:1.5px solid #e1d6fa; color:#4b3f86;
+    border-radius:12px; padding: 12px 16px; margin: 16px 0;
+    font-family: 'Menlo','Sarabun',monospace; font-size: 0.95rem; font-weight:600;
+  }
+  .q { font-family:var(--display); font-weight:700; margin: 18px 0 12px; font-size:1.02rem; line-height:1.45; }
+  .options { list-style: none; padding: 0; margin: 0; }
+  .opt {
+    display: block; width: 100%; text-align: left;
+    border: 1.5px solid var(--line); background: #fff; color:var(--ink);
+    border-radius: 13px; padding: 13px 15px; margin-bottom: 10px;
+    cursor: pointer; font-family: var(--body);
+    font-size: 0.95rem; line-height:1.5; transition: border-color .15s, background .15s;
+  }
+  .opt:hover:not(:disabled) { border-color: #cdbdf3; background: #faf7ff; }
+  .opt:disabled { cursor: default; opacity: 0.97; }
+  .opt.chosen-wrong { border-color: var(--wrong); background: var(--wrong-soft); }
+  .opt.chosen-correct { border-color: var(--correct); background: var(--correct-soft); font-weight:600; }
+  .feedback {
+    font-size: 0.93rem; line-height:1.6;
+    padding: 13px 15px; border-radius: 12px; margin-top: 8px;
+  }
+  .feedback.wrong { background: var(--wrong-soft); color: #b04863; border:1.5px solid #f3cdd7; }
+  .feedback.correct { background: var(--correct-soft); color: #2c5648; border:1.5px solid #bfe6d6; }
+  .feedback.correct b { color:var(--correct); }
+  .hint {
+    background: var(--hint-bg); border: 1.5px solid var(--hint-line);
+    padding: 11px 15px; margin-top: 10px; border-radius: 12px;
+    font-size: 0.9rem; line-height:1.55; color:var(--hint-ink);
+  }
+  .hint b { color: var(--hint-ink); }
+  .btn {
+    font-family: var(--display); font-weight:600; font-size: 0.95rem;
+    background: var(--brand); color: #fff; border: 1.5px solid var(--brand);
+    padding: 11px 22px; border-radius: 999px; cursor: pointer; transition:.15s;
+    box-shadow:0 4px 12px rgba(124,108,220,.25);
+  }
+  .btn:hover { background:var(--brand-d); border-color:var(--brand-d); }
+  .btn.ghost { background: transparent; color: var(--brand-d); border: 1.5px solid var(--brand); box-shadow:none; }
+  .btn.ghost:hover { background:var(--brand-soft); }
+  .row { display: flex; gap: 10px; margin-top: 12px; flex-wrap:wrap; }
+  .done { text-align: center; padding: 30px 20px; }
+  .done h2 { font-family:var(--display); color: var(--brand-d); }
+  @media(max-width:560px){
+    body{padding:22px 14px 44px;}
+    .card{padding:18px;border-radius:15px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>ตีความ p-value ให้ถูก</h1>
+    <div class="sub">Week 3 · Hypothesis testing — เลือกคำแปลที่ถูกต้อง · มี hint จนกว่าจะตอบถูก</div>
+  </header>
+  <div class="progress" id="progress"></div>
+  <div id="stage"></div>
+</div>
+
+<script>
+/* =========================================================================
+   แก้เนื้อหาตรงนี้ได้เลย — แต่ละ object คือ 1 ข้อ
+   - scenario : สถานการณ์
+   - result   : ผลสถิติที่ให้
+   - question : คำถาม
+   - options  : ตัวเลือก (correct: true = ข้อที่ถูก)
+   - why      : คำอธิบายหลังตอบถูก
+   - hints    : คำใบ้ไล่ระดับ (ใบ้ทีละขั้นทุกครั้งที่ตอบผิด)
+   ========================================================================= */
+const SCENARIOS = [
+  {
+    scenario: "เปรียบเทียบยาลดความดันสูตรใหม่กับสูตรเดิม ดูการลด SBP ใน 2 กลุ่มอิสระ",
+    result: "Welch's t-test:  t = 2.31,  p = 0.03",
+    question: "p = 0.03 หมายความว่าอะไร?",
+    options: [
+      { text: "มีโอกาส 3% ที่ H0 (ยาสองสูตรลดความดันได้เท่ากัน) เป็นจริง", correct: false },
+      { text: "มีโอกาส 3% ที่ผลที่เห็นเกิดจากความบังเอิญ", correct: false },
+      { text: "ถ้าจริง ๆ แล้วยาสองสูตรลดความดันได้เท่ากัน เราจะเห็นความต่างมากขนาดนี้หรือมากกว่า เพียง 3% ของการทดลองซ้ำ ๆ", correct: true },
+      { text: "มีโอกาส 97% ที่ยาสูตรใหม่ดีกว่าจริง", correct: false }
+    ],
+    why: "p-value คือความน่าจะเป็นของการได้ข้อมูลสุดโต่งเท่านี้หรือมากกว่า โดย *สมมติว่า H0 เป็นจริง* ไม่ใช่ความน่าจะเป็นที่ H0 จริง และไม่ใช่ 1−p = โอกาสที่ Ha จริง",
+    hints: [
+      "ถามตัวเองก่อน: p-value คำนวณโดย 'สมมติ' ว่าอะไรเป็นจริง?",
+      "p สมมติว่า H0 จริงไว้ก่อน แล้ววัดว่าข้อมูลที่เห็น 'น่าแปลกใจ' แค่ไหนภายใต้สมมติฐานนั้น — มันจึงไม่ใช่ 'โอกาสที่ H0 จริง'",
+      "ตัดข้อที่พูดถึง 'โอกาสที่ H0 จริง', 'โอกาสที่ Ha จริง', หรือ 'โอกาสที่เกิดจากบังเอิญ' ออก — เหลือข้อที่ขึ้นต้นด้วยเงื่อนไข 'ถ้า H0 จริง...'"
+    ]
+  },
+  {
+    scenario: "ทดสอบยาใหม่กับ placebo ได้ผลไม่ถึงนัยสำคัญ",
+    result: "t-test:  t = 1.05,  p = 0.20",
+    question: "ข้อสรุปที่ถูกต้องคือ?",
+    options: [
+      { text: "พิสูจน์แล้วว่ายาใหม่กับ placebo ไม่ต่างกัน", correct: false },
+      { text: "ยาใหม่ไม่มีผลแน่นอน", correct: false },
+      { text: "ข้อมูลนี้ไม่ได้ให้หลักฐานเพียงพอที่จะสรุปว่าต่างกัน — แต่ก็ยังสรุปไม่ได้ว่า 'ไม่ต่างกัน'", correct: true },
+      { text: "ต้องเก็บข้อมูลเพิ่มไปเรื่อย ๆ จนกว่า p จะ < 0.05", correct: true_trap() }
+    ],
+    why: "'ไม่พบหลักฐานของความต่าง' ไม่เท่ากับ 'พิสูจน์ว่าไม่มีความต่าง' (absence of evidence ≠ evidence of absence) อาจเป็นเพราะไม่มีผลจริง หรือ power ไม่พอก็ได้ และการเก็บเพิ่มจน p<0.05 คือการ p-hacking",
+    hints: [
+      "p สูง = เราไม่มีหลักฐานพอจะปฏิเสธ H0 — แต่ 'ไม่มีหลักฐาน' แปลว่า 'พิสูจน์ว่าไม่มีผล' หรือเปล่า?",
+      "นึกถึงความเป็นไปได้สองทางที่ทำให้ p สูง: (1) ไม่มีผลจริง หรือ (2) มีผลแต่ตัวอย่างเล็กเกินจะจับได้ (power ต่ำ)",
+      "เลือกข้อที่ระวังคำว่า 'พิสูจน์' และไม่ฟันธงเกินข้อมูล"
+    ]
+  },
+  {
+    scenario: "ทดลองในผู้ป่วย 8,000 คน ยาใหม่ลด SBP มากกว่าสูตรเดิมเฉลี่ย 0.4 mmHg",
+    result: "t-test:  p < 0.001   (ความต่างเฉลี่ย = 0.4 mmHg)",
+    question: "p เล็กมาก แต่ความต่างแค่ 0.4 mmHg — ตีความอย่างไร?",
+    options: [
+      { text: "ความต่างมีนัยสำคัญทางคลินิกมาก เพราะ p เล็กมาก", correct: false },
+      { text: "มีนัยสำคัญทางสถิติ แต่ความต่าง 0.4 mmHg เล็กเกินจะมีความหมายทางคลินิก — n ที่ใหญ่มากทำให้จับความต่างจิ๋วได้", correct: true },
+      { text: "ยาสูตรใหม่ดีกว่าสูตรเดิมอย่างชัดเจน", correct: false },
+      { text: "ผลนี้ผิดพลาด เพราะ p เล็กแต่ความต่างน้อย เป็นไปไม่ได้", correct: false }
+    ],
+    why: "นัยสำคัญทางสถิติ (statistical significance) ≠ นัยสำคัญทางคลินิก (clinical significance) ตัวอย่างที่ใหญ่มากทำให้ p เล็กได้แม้ความต่างเล็กจนไม่มีความหมายจริง — ต้องดู effect size/ขนาดความต่างเสมอ",
+    hints: [
+      "p บอก 'ความต่างนี้น่าจะไม่ใช่บังเอิญ' แต่มันบอก 'ความต่างนี้ใหญ่พอจะสำคัญทางคลินิกไหม' หรือเปล่า?",
+      "n = 8,000 มหาศาล — ตัวอย่างยิ่งใหญ่ p ยิ่งเล็กได้ง่าย แม้ความต่างจริงจะจิ๋ว",
+      "แยกสองคำให้ขาด: statistical significance (p) กับ clinical significance (ขนาด 0.4 mmHg) — เลือกข้อที่แยกสองอย่างนี้"
+    ]
+  },
+  {
+    scenario: "ทดลองยาใหม่ n = 18 ต่อกลุ่ม ได้ effect size ปานกลาง (Cohen's d ≈ 0.5) แต่ p เกิน 0.05 นิดเดียว",
+    result: "t-test:  p = 0.06,  Cohen's d = 0.5,  n = 18/กลุ่ม",
+    question: "p = 0.06 (fail to reject) แต่ effect ปานกลาง + n เล็ก — error แบบไหนน่าเกิดสุด?",
+    options: [
+      { text: "Type I error (เตือนภัยลวง — สรุปว่ามีผลทั้งที่ไม่มี)", correct: false },
+      { text: "Type II error (พลาดของจริง — สรุปว่าไม่มีผลทั้งที่อาจมี) เพราะ n เล็กทำให้ power ต่ำ จับ effect ปานกลางไม่ไหว", correct: true },
+      { text: "ไม่มี error เพราะ p > 0.05 แปลว่าไม่มีผลแน่นอน", correct: false },
+      { text: "ทั้ง Type I และ Type II พร้อมกัน", correct: false }
+    ],
+    why: "นี่คือกับดักคลาสสิก: เรา 'fail to reject' (จึงเสี่ยง Type II = พลาดของจริง) เมื่อ effect ดูมีอยู่จริงระดับปานกลาง แต่ n เล็กทำให้ power ต่ำ จึงจับไม่ได้ การสรุป 'ไม่มีผล' ตรงนี้อันตราย — ควรบอกว่า study อาจ underpowered",
+    hints: [
+      "เราปฏิเสธ H0 ได้ไหม? ถ้า 'ไม่ปฏิเสธ' แล้วเราพลาดได้แบบไหน — เตือนภัยลวง หรือ พลาดของจริง?",
+      "Type I เกิดตอน 'reject' Type II เกิดตอน 'fail to reject' — เคสนี้เราอยู่ฝั่งไหน?",
+      "n = 18 เล็ก → power ต่ำ → จับ effect ที่อาจมีอยู่จริงไม่ได้ → นี่คือ Type II"
+    ]
+  }
+];
+
+/* helper เผื่อมีข้อที่ 'ถูกได้บางบริบท' — ในที่นี้ตั้งให้ข้อ p-hacking ไม่ถือว่าถูก */
+function true_trap(){ return false; }
+
+let idx = 0;
+let hintLevel = 0;
+let solved = 0;
+
+const stage = document.getElementById('stage');
+const progressEl = document.getElementById('progress');
+
+function render() {
+  if (idx >= SCENARIOS.length) { renderDone(); return; }
+  const s = SCENARIOS[idx];
+  hintLevel = 0;
+  progressEl.textContent = `ข้อ ${idx + 1} จาก ${SCENARIOS.length}  ·  ตอบถูกแล้ว ${solved}`;
+
+  let opts = s.options.map((o, i) =>
+    `<button class="opt" data-i="${i}" onclick="choose(${i})">${o.text}</button>`
+  ).join('');
+
+  stage.innerHTML = `
+    <div class="card">
+      <div class="scenario">${s.scenario}</div>
+      <div class="result-box">${s.result}</div>
+      <div class="q">${s.question}</div>
+      <div class="options">${opts}</div>
+      <div id="fb"></div>
+    </div>`;
+}
+
+function choose(i) {
+  const s = SCENARIOS[idx];
+  const o = s.options[i];
+  const fb = document.getElementById('fb');
+  const btn = document.querySelector(`.opt[data-i="${i}"]`);
+
+  if (o.correct) {
+    document.querySelectorAll('.opt').forEach(b => b.disabled = true);
+    btn.classList.add('chosen-correct');
+    solved++;
+    fb.innerHTML = `
+      <div class="feedback correct"><b>ถูกต้อง</b><br>${s.why}</div>
+      <div class="row"><button class="btn" onclick="next()">ข้อถัดไป →</button></div>`;
+  } else {
+    btn.disabled = true;
+    btn.classList.add('chosen-wrong');
+    const hint = s.hints[Math.min(hintLevel, s.hints.length - 1)];
+    hintLevel++;
+    fb.innerHTML = `
+      <div class="feedback wrong">ยังไม่ใช่ — ลองใหม่อีกครั้ง</div>
+      <div class="hint"><b>คำใบ้ที่ ${hintLevel}:</b> ${hint}</div>`;
+  }
+}
+
+function next() { idx++; render(); }
+
+function renderDone() {
+  progressEl.textContent = '';
+  stage.innerHTML = `
+    <div class="card done">
+      <h2>จบครบทุกข้อ</h2>
+      <p>ตอบถูก ${solved} จาก ${SCENARIOS.length} ข้อ</p>
+      <p class="sub">หัวใจของวันนี้: p-value สมมติว่า H0 จริงไว้ก่อน · นัยสำคัญทางสถิติ ≠ ทางคลินิก · 'ไม่พบหลักฐาน' ≠ 'พิสูจน์ว่าไม่มี'</p>
+      <div class="row" style="justify-content:center">
+        <button class="btn ghost" onclick="restart()">เริ่มใหม่</button>
+      </div>
+    </div>`;
+}
+
+function restart() { idx = 0; solved = 0; render(); }
+
+render();
+</script>
+</body>
+</html>

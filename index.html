@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Biostatistics 160703 · คลัง widget ฝึกคิด</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#faf6fb; --ink:#36313d; --muted:#8c8598; --line:#ece4f1;
+    --brand:#7c6cdc; --brand-d:#5f4fc0; --brand-soft:#f1ecfc; --card:#fff;
+    --mint:#2f9e7d; --mint-soft:#e6f6ef;
+    --display:'Mali','Sarabun',system-ui,sans-serif;
+    --body:'Sarabun',system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{margin:0;padding:40px 20px 64px;color:var(--ink);font-family:var(--body);line-height:1.62;
+    background:
+      radial-gradient(1100px 560px at 10% -10%, #f1e9fd 0%, transparent 58%),
+      radial-gradient(900px 480px at 102% -4%, #fdebf2 0%, transparent 52%),
+      var(--bg);
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  .wrap{max-width:880px;margin:0 auto;}
+  header{margin-bottom:6px;padding-bottom:20px;border-bottom:2px dashed #e4daf0;}
+  .kicker{display:inline-block;font-family:var(--display);font-weight:600;font-size:.82rem;
+    color:var(--brand-d);background:var(--brand-soft);border-radius:999px;padding:5px 15px;margin-bottom:14px;}
+  h1{font-family:var(--display);font-weight:700;font-size:clamp(1.7rem,4.5vw,2.3rem);
+    margin:0 0 8px;color:#4b3f86;letter-spacing:-.01em;line-height:1.22;}
+  .sub{color:var(--muted);font-size:.96rem;}
+  .lead{font-size:1.02rem;color:#52495d;margin:22px 0 30px;max-width:62ch;}
+  h2{font-family:var(--display);font-weight:700;font-size:1.22rem;color:#4b3f86;
+     margin:40px 0 16px;display:flex;align-items:center;gap:11px;}
+  h2::before{content:"";width:14px;height:14px;border-radius:5px;background:var(--brand);
+     box-shadow:0 0 0 5px var(--brand-soft);flex:none;}
+  .grid{display:grid;gap:16px;}
+  .card{display:block;position:relative;background:var(--card);border:1.5px solid var(--line);
+    border-radius:18px;padding:20px 22px;text-decoration:none;color:inherit;
+    box-shadow:0 4px 16px rgba(95,79,192,.06);transition:transform .16s,box-shadow .16s,border-color .16s;}
+  .card:hover{transform:translateY(-3px);border-color:#cdbdf3;box-shadow:0 12px 30px rgba(95,79,192,.16);}
+  .card .t{font-family:var(--display);font-weight:700;font-size:1.12rem;color:#3a3346;margin-bottom:6px;
+    display:flex;align-items:center;flex-wrap:wrap;gap:8px;line-height:1.4;}
+  .card .d{font-size:.92rem;color:var(--muted);line-height:1.62;}
+  .card .go{display:inline-block;margin-top:15px;font-family:var(--display);font-weight:600;font-size:.9rem;
+    color:#fff;background:var(--brand);padding:8px 17px;border-radius:999px;transition:background .16s;}
+  .card:hover .go{background:var(--brand-d);}
+  .tag{display:inline-block;font-size:.72rem;font-weight:600;font-family:var(--body);
+    background:var(--mint-soft);color:#1f7d61;border-radius:999px;padding:3px 11px;vertical-align:middle;}
+  footer{margin-top:48px;padding:20px 22px;border-radius:16px;background:#fbf8ff;border:1.5px solid var(--line);
+    font-size:.86rem;color:var(--muted);line-height:1.75;}
+  footer code{background:#fff;border:1px solid var(--line);border-radius:6px;padding:2px 7px;font-size:.86em;color:var(--brand-d);}
+  @media(max-width:560px){
+    body{padding:26px 15px 48px;}
+    .card{padding:17px 18px;border-radius:15px;}
+    .lead{font-size:.98rem;margin:18px 0 24px;}
+    h2{margin:30px 0 14px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="kicker">Applied Biostatistics 160703</span>
+    <h1>คลัง widget ฝึกคิด</h1>
+    <div class="sub">เปิดในเบราว์เซอร์ได้เลย · ใช้ได้ทั้งมือถือ iPad และคอม · ไม่ต้องติดตั้ง</div>
+  </header>
+
+  <p class="lead">แต่ละ widget เป็นแบบฝึกตอบ-แล้ว-รู้ผลทันที มีคำใบ้ไล่ระดับจนกว่าจะตอบถูก
+  ใช้ระหว่างคาบเป็นจุดหยุดทำกิจกรรม หรือให้นิสิตฝึกเองนอกเวลา</p>
+
+  <h2>สัปดาห์ 1 · ตัวแปรและการวัด</h2>
+  <div class="grid">
+    <a class="card" href="widget_A_scale_picker.html">
+      <div class="t">Widget A · เลือกมาตรวัด → ค่ากลางที่ใช้ได้ <span class="tag">Week 1</span></div>
+      <div class="d">จัดประเภทตัวแปร 8 ตัว (nominal / ordinal / interval / ratio) → บอกว่าใช้ค่ากลางอะไรได้ → ตรวจ true zero · auto-graded + hint ไล่ระดับ</div>
+      <span class="go">เปิด widget →</span>
+    </a>
+  </div>
+
+  <h2>สัปดาห์ 3 · ตรรกะการทดสอบสมมติฐาน</h2>
+  <div class="grid">
+    <a class="card" href="widget_pvalue_reasoning.html">
+      <div class="t">ตีความ p-value ให้ถูก <span class="tag">Week 3</span></div>
+      <div class="d">Hypothesis testing — เลือกคำแปลความหมายของ p-value ที่ถูกต้อง · มี hint จนกว่าจะตอบถูก</div>
+      <span class="go">เปิด widget →</span>
+    </a>
+    <a class="card" href="widget_type1_type2_visual_5.html">
+      <div class="t">Type I vs Type II — เห็นภาพ <span class="tag">Week 3</span></div>
+      <div class="d">ลากเส้นตัดสินใจ แล้วดูว่าความผิดพลาดสองแบบ (α กับ β) แลกกันอย่างไร</div>
+      <span class="go">เปิด widget →</span>
+    </a>
+    <a class="card" href="widget_decision_from_results.html">
+      <div class="t">ตัดสินใจจากผลรวม <span class="tag">Week 3</span></div>
+      <div class="d">อ่าน p-value + 95% CI + ขนาดผล (effect size) พร้อมกัน แล้วตัดสินใจทางคลินิก · hint จนกว่าจะถูก</div>
+      <span class="go">เปิด widget →</span>
+    </a>
+  </div>
+
+  <footer>
+    วิธีเอาขึ้นเว็บ: อัปโฟลเดอร์นี้ทั้งก้อนขึ้น static host ได้เลย (เช่น GitHub Pages, Netlify, Google Sites embed)
+    โดย <code>index.html</code> เป็นหน้าแรก · หรือฝัง widget เดี่ยวใน LMS ด้วย
+    <code>&lt;iframe src="widget_A_scale_picker.html"&gt;&lt;/iframe&gt;</code>
+  </footer>
+</div>
+</body>
+</html>

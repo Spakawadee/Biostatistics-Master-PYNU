@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ตัดสินใจจากผลรวม — Biostat Week 3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#faf6fb; --ink:#36313d; --muted:#8c8598; --line:#ece4f1;
+    --brand:#7c6cdc; --brand-d:#5f4fc0; --brand-soft:#f1ecfc; --card:#fff;
+    --correct:#2f9e7d; --correct-soft:#e6f6ef;
+    --wrong:#d96a86; --wrong-soft:#fcecf0;
+    --hint-bg:#fdf4e0; --hint-line:#f1dca0; --hint-ink:#8a6418;
+    --display:'Mali','Sarabun',system-ui,sans-serif;
+    --body:'Sarabun',system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{margin:0;padding:32px 20px 56px;color:var(--ink);font-family:var(--body);line-height:1.62;
+    background:
+      radial-gradient(1100px 560px at 8% -10%, #f1e9fd 0%, transparent 56%),
+      radial-gradient(900px 480px at 104% -4%, #fdebf2 0%, transparent 50%),
+      var(--bg);
+    -webkit-font-smoothing:antialiased;}
+  .wrap{max-width:740px;margin:0 auto;}
+  header{border-bottom:2px dashed #e4daf0;padding-bottom:16px;margin-bottom:22px;}
+  h1{font-family:var(--display);font-weight:700;font-size:clamp(1.5rem,4vw,1.85rem);margin:0 0 6px;color:#4b3f86;line-height:1.25;}
+  .sub{color:var(--muted);font-size:.92rem;}
+  .progress{font-size:.88rem;color:var(--brand-d);font-weight:600;margin-bottom:14px;}
+  .card{background:var(--card);border:1.5px solid var(--line);border-radius:18px;
+    padding:24px;margin-bottom:18px;box-shadow:0 4px 16px rgba(95,79,192,.06);}
+  .scenario{font-size:1.06rem;margin-bottom:12px;line-height:1.55;}
+  .mcid{font-size:.9rem;background:var(--brand-soft);border:1.5px solid #e1d6fa;color:#4b3f86;
+    padding:10px 14px;border-radius:12px;margin-bottom:16px;font-weight:500;}
+  .results{border:1.5px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:18px;}
+  .results .rrow{display:flex;border-bottom:1px solid var(--line);}
+  .results .rrow:last-child{border-bottom:none;}
+  .results .rk{flex:0 0 42%;background:#fbf8ff;padding:10px 14px;font-size:.86rem;color:var(--muted);}
+  .results .rv{flex:1;padding:10px 14px;font-family:'Menlo','Sarabun',monospace;font-size:.92rem;font-weight:600;color:#3a3346;}
+  .q{font-family:var(--display);font-weight:700;margin:18px 0 12px;font-size:1.02rem;line-height:1.45;}
+  .options{list-style:none;padding:0;margin:0;}
+  .opt{display:block;width:100%;text-align:left;border:1.5px solid var(--line);background:#fff;color:var(--ink);
+    border-radius:13px;padding:13px 15px;margin-bottom:10px;cursor:pointer;
+    font-family:var(--body);font-size:.94rem;line-height:1.5;transition:.15s;}
+  .opt:hover:not(:disabled){border-color:#cdbdf3;background:#faf7ff;}
+  .opt:disabled{cursor:default;opacity:.97;}
+  .opt.chosen-wrong{border-color:var(--wrong);background:var(--wrong-soft);}
+  .opt.chosen-correct{border-color:var(--correct);background:var(--correct-soft);font-weight:600;}
+  .feedback{font-size:.93rem;line-height:1.6;padding:13px 15px;border-radius:12px;margin-top:8px;}
+  .feedback.wrong{background:var(--wrong-soft);color:#b04863;border:1.5px solid #f3cdd7;}
+  .feedback.correct{background:var(--correct-soft);color:#2c5648;border:1.5px solid #bfe6d6;}
+  .feedback.correct b{color:var(--correct);}
+  .hint{background:var(--hint-bg);border:1.5px solid var(--hint-line);padding:11px 15px;
+    margin-top:10px;border-radius:12px;font-size:.9rem;line-height:1.55;color:var(--hint-ink);}
+  .hint b{color:var(--hint-ink);}
+  .btn{font-family:var(--display);font-weight:600;font-size:.95rem;background:var(--brand);
+    color:#fff;border:1.5px solid var(--brand);padding:11px 22px;border-radius:999px;cursor:pointer;
+    transition:.15s;box-shadow:0 4px 12px rgba(124,108,220,.25);}
+  .btn:hover{background:var(--brand-d);border-color:var(--brand-d);}
+  .btn.ghost{background:transparent;color:var(--brand-d);border:1.5px solid var(--brand);box-shadow:none;}
+  .btn.ghost:hover{background:var(--brand-soft);}
+  .row{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;}
+  .done{text-align:center;padding:30px 20px;} .done h2{font-family:var(--display);color:var(--brand-d);}
+  @media(max-width:560px){
+    body{padding:22px 14px 44px;}
+    .card{padding:18px;border-radius:15px;}
+    .results .rk{flex:0 0 46%;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>ตัดสินใจจากผลรวม</h1>
+    <div class="sub">Week 3 · อ่าน p-value + 95% CI + ขนาดผล พร้อมกัน แล้วตัดสินใจทางคลินิก · มี hint จนกว่าจะถูก</div>
+  </header>
+  <div class="progress" id="progress"></div>
+  <div id="stage"></div>
+</div>
+
+<script>
+/* =========================================================================
+   แก้/เพิ่มข้อได้ที่นี่ — แต่ละ object คือ 1 เคส
+   card.rows = แถวในการ์ดผลลัพธ์ [ชื่อ, ค่า]
+   ========================================================================= */
+const CASES = [
+  {
+    scenario: "ยาลดความดันสูตรใหม่ เทียบสูตรเดิม ในผู้ป่วย 2,000 คน วัดการลด SBP",
+    mcid: "เกณฑ์ที่ถือว่ามีความหมายทางคลินิก: ลด SBP ได้อย่างน้อย 5 mmHg",
+    card: [["การทดสอบ","Welch's t-test"],["ขนาดผล (ลด SBP)","1.2 mmHg"],
+           ["95% CI","[0.4, 2.0] mmHg"],["p-value","0.004"],["n","2,000"]],
+    question: "ควรสรุปอย่างไร?",
+    options: [
+      { text: "มีนัยสำคัญทางสถิติ แต่ขนาดผล — และแม้แต่ขอบบนของ CI (2.0) — ยังต่ำกว่าเกณฑ์ 5 mmHg จึงไม่น่ามีความหมายทางคลินิก", correct: true },
+      { text: "p เล็กมาก จึงเป็นความต่างที่สำคัญทางคลินิก ควรเปลี่ยนมาใช้สูตรใหม่", correct: false },
+      { text: "ยาสูตรใหม่ดีกว่าชัดเจน เพราะผลมีนัยสำคัญ", correct: false },
+      { text: "สรุปไม่ได้ เพราะ p ไม่ได้บอกขนาดของผล", correct: false }
+    ],
+    why: "n ที่ใหญ่มากทำให้จับความต่างจิ๋วได้อย่างมีนัยสำคัญ แต่ CI ทั้งช่วง (0.4–2.0) อยู่ต่ำกว่าเกณฑ์ 5 mmHg แปลว่าแม้กรณีดีสุดผลก็ยังเล็กเกินจะเปลี่ยนการรักษา — statistical significance ≠ clinical importance",
+    hints: [
+      "อย่าหยุดที่ p — ดู CI ด้วย: ช่วงค่าที่เป็นไปได้ของผลจริงคือเท่าไหร่?",
+      "เทียบ CI ทั้งช่วง [0.4, 2.0] กับเกณฑ์คลินิก 5 mmHg — แม้แต่ขอบบนสุดยังถึงเกณฑ์ไหม?",
+      "CI ทั้งช่วงต่ำกว่า 5 → มีนัยสำคัญจริงแต่เล็กเกินจะสำคัญ เลือกข้อที่แยกสองอย่างนี้"
+    ]
+  },
+  {
+    scenario: "ยาแก้คลื่นไส้ตัวใหม่ เทียบมาตรฐาน วัดอัตราตอบสนอง (response rate) ในผู้ป่วย 90 คน",
+    mcid: "เกณฑ์ที่ถือว่ามีความหมายทางคลินิก: เพิ่มอัตราตอบสนอง ≥ 10 จุดเปอร์เซ็นต์",
+    card: [["การทดสอบ","z-test for proportions"],["ขนาดผล (ส่วนต่าง)","ตัวใหม่สูงกว่า 10 จุด %"],
+           ["95% CI","[−4, +24] จุด %"],["p-value","0.16"],["n","90"]],
+    question: "ควรสรุปอย่างไร?",
+    options: [
+      { text: "สรุปว่า 'ไม่ต่างกัน' ไม่ได้ — CI กว้างคลุมตั้งแต่แย่กว่าเล็กน้อย (−4) ถึงดีกว่ามาก (+24) การศึกษาน่าจะ power ไม่พอ ควรเก็บข้อมูลเพิ่ม", correct: true },
+      { text: "พิสูจน์แล้วว่ายาสองตัวได้ผลเท่ากัน เพราะ p > 0.05", correct: false },
+      { text: "ยาใหม่ไม่ได้ผล", correct: false },
+      { text: "ยาใหม่ดีกว่า 10 จุด จึงควรเปลี่ยนมาใช้ทันที", correct: false }
+    ],
+    why: "p > 0.05 และ CI คลุม 0 = ยังไม่มีหลักฐานพอจะสรุปว่าต่าง แต่ก็สรุปว่า 'เท่ากัน' ไม่ได้ เพราะ CI ยังคลุมถึง +24 จุด (ดีกว่ามาก) ด้วย — absence of evidence ≠ evidence of absence การศึกษานี้ underpowered",
+    hints: [
+      "p > 0.05 = 'ไม่มีหลักฐานพอจะปฏิเสธ H0' — แต่เท่ากับ 'พิสูจน์ว่าไม่ต่าง' ไหม?",
+      "ดูความกว้างของ CI [−4, +24]: มันคลุมทั้งกรณีแย่กว่าและดีกว่ามาก — แบบนี้มั่นใจว่า 'ไม่ต่าง' ได้ไหม?",
+      "CI กว้างคลุมผลที่สำคัญทางคลินิก → สรุปไม่ได้ ต้องเพิ่ม n เลือกข้อที่ไม่ฟันธงว่าเท่ากัน"
+    ]
+  },
+  {
+    scenario: "ยาใหม่ในกลุ่ม anticoagulant เปรียบเทียบกับยา anticoagulant ชนิดเดิมที่เป็นยามาตรฐาน วัดเวลาจนถึง INR คงที่ (วัน) ในผู้ป่วย 150 คน",
+    mcid: "เกณฑ์ที่ถือว่ามีความหมายทางคลินิก: เร็วขึ้นอย่างน้อย 1 วัน",
+    card: [["การทดสอบ","Welch's t-test"],["ขนาดผล","เร็วขึ้น 2.5 วัน"],
+           ["95% CI","[1.8, 3.2] วัน"],["p-value","< 0.001"],["n","150"]],
+    question: "ควรสรุปอย่างไร?",
+    options: [
+      { text: "มีนัยสำคัญทางสถิติ CI แคบ (แม่นยำ) และทั้งช่วงเกินเกณฑ์ 1 วัน — เป็นหลักฐานหนักแน่นพอจะนำไปใช้", correct: true },
+      { text: "n แค่ 150 ยังน้อยเกินไป ควรทำซ้ำก่อนเชื่อ", correct: false },
+      { text: "บอกได้แค่ว่ามีนัยสำคัญ แต่ไม่รู้ขนาดของผล", correct: false },
+      { text: "ต้องระวัง น่าจะเป็น Type I error", correct: false }
+    ],
+    why: "นี่คือกรณีที่คำตอบคือ 'ใช่ ลงมือได้' — มีนัยสำคัญ, CI แคบและทั้งช่วงอยู่เหนือเกณฑ์ 1 วัน จึงทั้งแม่นยำและสำคัญทางคลินิก ไม่ใช่ทุกผลที่ต้องตั้งข้อสงสัย",
+    hints: [
+      "ดู CI [1.8, 3.2] — แคบหรือกว้าง? แล้วเทียบกับเกณฑ์ 1 วัน",
+      "CI ทั้งช่วงเกิน 1 วัน และแคบ → ทั้งสำคัญและแม่นยำ",
+      "บางครั้งหลักฐานก็หนักแน่นจริง เลือกข้อที่ยอมรับตามนั้น"
+    ]
+  },
+  {
+    scenario: "ยาลด LDL ตัวใหม่ วัดการลด LDL (mg/dL) ก่อน-หลังในผู้ป่วย 60 คน",
+    mcid: "เกณฑ์ที่ถือว่ามีความหมายทางคลินิก: ลด LDL ≥ 10 mg/dL",
+    card: [["การทดสอบ","paired t-test"],["ขนาดผล","ลดได้ 15 mg/dL"],
+           ["95% CI","[2, 28] mg/dL"],["p-value","0.02"],["n","60"]],
+    question: "ควรสรุปอย่างไร?",
+    options: [
+      { text: "มีนัยสำคัญทางสถิติ แต่ CI กว้างมาก (2–28) คร่อมเกณฑ์ 10 — ผลจริงอาจต่ำกว่าหรือสูงกว่าเกณฑ์ก็ได้ ยังมั่นใจขนาดผลไม่ได้ ควรเก็บเพิ่ม", correct: true },
+      { text: "ลดได้ 15 mg/dL เกินเกณฑ์ 10 จึงสำคัญทางคลินิกแน่นอน", correct: false },
+      { text: "ไม่มีนัยสำคัญ เพราะ CI กว้าง", correct: false },
+      { text: "p = 0.02 พิสูจน์ว่าลดได้ 15 mg/dL", correct: false }
+    ],
+    why: "มีนัยสำคัญ (CI ไม่คร่อม 0) แต่ CI กว้างคร่อมเกณฑ์ 10: ขอบล่าง 2 ต่ำกว่าเกณฑ์ ขอบบน 28 สูงกว่ามาก → significant ไม่ได้แปลว่า precise การฟันธงว่า '15 และสำคัญแน่' เกินกว่าที่ข้อมูลรองรับ",
+    hints: [
+      "significant แล้ว แต่ดู *ความกว้าง* ของ CI ด้วย: [2, 28] บอกอะไร?",
+      "CI คร่อมเกณฑ์ 10 (ขอบล่าง 2 < 10 < ขอบบน 28) → ผลจริงอาจต่ำหรือสูงกว่าเกณฑ์",
+      "significant ≠ แม่นยำ เลือกข้อที่ยอมรับความไม่แน่นอนของขนาดผล"
+    ]
+  }
+];
+
+let idx=0, hintLevel=0, solved=0;
+const stage=document.getElementById('stage');
+const progressEl=document.getElementById('progress');
+
+function render(){
+  if(idx>=CASES.length){ renderDone(); return; }
+  const s=CASES[idx]; hintLevel=0;
+  progressEl.textContent=`ข้อ ${idx+1} จาก ${CASES.length}  ·  ตอบถูกแล้ว ${solved}`;
+  const rows=s.card.map(r=>`<div class="rrow"><div class="rk">${r[0]}</div><div class="rv">${r[1]}</div></div>`).join('');
+  const opts=s.options.map((o,i)=>`<button class="opt" data-i="${i}" onclick="choose(${i})">${o.text}</button>`).join('');
+  stage.innerHTML=`
+    <div class="card">
+      <div class="scenario">${s.scenario}</div>
+      <div class="mcid">${s.mcid}</div>
+      <div class="results">${rows}</div>
+      <div class="q">${s.question}</div>
+      <div class="options">${opts}</div>
+      <div id="fb"></div>
+    </div>`;
+}
+function choose(i){
+  const s=CASES[idx], o=s.options[i], fb=document.getElementById('fb');
+  const btn=document.querySelector(`.opt[data-i="${i}"]`);
+  if(o.correct){
+    document.querySelectorAll('.opt').forEach(b=>b.disabled=true);
+    btn.classList.add('chosen-correct'); solved++;
+    fb.innerHTML=`<div class="feedback correct"><b>ถูกต้อง</b><br>${s.why}</div>
+      <div class="row"><button class="btn" onclick="next()">ข้อถัดไป →</button></div>`;
+  } else {
+    btn.disabled=true; btn.classList.add('chosen-wrong');
+    const hint=s.hints[Math.min(hintLevel,s.hints.length-1)]; hintLevel++;
+    fb.innerHTML=`<div class="feedback wrong">ยังไม่ใช่ — ลองใหม่อีกครั้ง</div>
+      <div class="hint"><b>คำใบ้ที่ ${hintLevel}:</b> ${hint}</div>`;
+  }
+}
+function next(){ idx++; render(); }
+function renderDone(){
+  progressEl.textContent='';
+  stage.innerHTML=`<div class="card done"><h2>จบครบทุกข้อ</h2>
+    <p>ตอบถูก ${solved} จาก ${CASES.length} ข้อ</p>
+    <p class="sub">หัวใจ: อ่าน p (มีนัยสำคัญไหม) + CI (ขนาดผลและความแม่นยำ) + เทียบเกณฑ์คลินิก — ทั้งสามอย่างพร้อมกัน ไม่ใช่ p อย่างเดียว</p>
+    <div class="row" style="justify-content:center"><button class="btn ghost" onclick="restart()">เริ่มใหม่</button></div></div>`;
+}
+function restart(){ idx=0; solved=0; render(); }
+render();
+</script>
+</body>
+</html>
