@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Widget C · SD vs SE vs 95% CI — เห็นภาพ | Biostat Week 1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Itim&family=Mali:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#fdf2f8; --ink:#5b4a55; --muted:#a690a0; --line:#f3d7e6;
+    --accent:#e98bb6; --accent-deep:#d76ea2; --card:#ffffff; --soft:#fff6fb;
+    --sd:#f0a85c;     /* SD = พีช */
+    --ci:#5fb693;     /* CI = มิ้นต์ */
+    --se:#8fb6e6;     /* SE = ฟ้าพาสเทล */
+    --font-head:'Itim','Mali',cursive,sans-serif;
+    --font-body:'Mali','Itim',-apple-system,system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{margin:0;padding:24px 18px;color:var(--ink);line-height:1.7;
+    font-family:var(--font-body);
+    background:linear-gradient(160deg,#fdf2f8 0%,#f3f0fd 45%,#eafaf4 100%);
+    background-attachment:fixed;min-height:100vh;}
+  .wrap{max-width:780px;margin:0 auto;}
+  header{border-bottom:3px dotted var(--accent);padding-bottom:14px;margin-bottom:18px;}
+  h1{font-family:var(--font-head);font-size:1.6rem;margin:0 0 4px;color:var(--accent-deep);}
+  .sub{color:var(--muted);font-size:.9rem;}
+  .card{background:var(--card);border:2px solid var(--line);border-radius:18px;
+    padding:18px;margin-bottom:16px;box-shadow:0 6px 18px rgba(231,139,182,.10);}
+
+  .controls{display:flex;flex-wrap:wrap;gap:12px;align-items:center;
+    font-family:var(--font-body);font-size:.92rem;}
+  .controls .nrow{flex:1 1 280px;}
+  .controls label{font-family:var(--font-head);color:var(--accent-deep);display:block;margin-bottom:4px;}
+  input[type=range]{width:100%;accent-color:var(--accent);}
+  .nval{color:var(--accent-deep);font-family:var(--font-head);}
+  .btn{font-family:var(--font-head);font-size:.95rem;cursor:pointer;transition:.15s;
+    background:var(--accent);color:#fff;border:2px solid var(--accent);
+    padding:9px 18px;border-radius:999px;box-shadow:0 4px 12px rgba(231,139,182,.28);}
+  .btn:hover{background:var(--accent-deep);border-color:var(--accent-deep);transform:translateY(-1px);}
+  .btn.ghost{background:transparent;color:var(--accent-deep);box-shadow:none;}
+  .btn.ghost:hover{background:var(--soft);}
+  .btn.amber{background:var(--sd);border-color:var(--sd);box-shadow:0 4px 12px rgba(240,168,92,.28);}
+  .btn.amber:hover{background:#e0954a;border-color:#e0954a;}
+
+  canvas{width:100%;height:auto;display:block;margin:8px 0 2px;
+    background:var(--soft);border:2px dashed var(--line);border-radius:14px;}
+
+  .readout{display:flex;flex-wrap:wrap;gap:8px;font-family:var(--font-body);margin-top:10px;}
+  .pill{flex:1 1 92px;text-align:center;border:2px solid var(--line);border-radius:14px;padding:9px 6px;background:var(--soft);}
+  .pill .v{font-family:var(--font-head);font-size:1.15rem;display:block;}
+  .pill .l{font-size:.74rem;color:var(--muted);}
+  .pill.sd .v{color:var(--sd);} .pill.ci .v{color:var(--ci);} .pill.se .v{color:var(--se);}
+
+  .note{font-family:var(--font-body);font-size:.92rem;
+    background:var(--soft);border:2px solid var(--accent);border-radius:14px;
+    padding:11px 14px;margin-top:12px;color:var(--ink);min-height:2.4em;}
+  .note b{color:var(--accent-deep);}
+  .legend{font-family:var(--font-body);font-size:.84rem;color:var(--muted);
+    margin-top:12px;line-height:1.9;}
+  .sw{display:inline-block;width:12px;height:12px;border-radius:4px;vertical-align:middle;margin-right:4px;}
+  details{font-family:var(--font-body);font-size:.88rem;margin-top:8px;}
+  summary{cursor:pointer;font-family:var(--font-head);color:var(--accent-deep);}
+
+  /* ===== รองรับหน้าจอโทรศัพท์ ===== */
+  @media (max-width:600px){
+    body{padding:14px 10px;}
+    h1{font-size:1.3rem;}
+    .sub{font-size:.82rem;}
+    .card{padding:14px;border-radius:14px;}
+    .controls{font-size:.88rem;gap:10px;}
+    .controls .nrow{flex:1 1 100%;}
+    .btn{flex:1 1 100%;padding:11px 16px;}
+    .pill{flex:1 1 60px;}
+    .pill .v{font-size:1rem;}
+    .pill .l{font-size:.68rem;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>SD เทียบ SE เทียบ 95% CI — เห็นภาพ</h1>
+    <div class="sub">Widget C · Week 1 · เลื่อน n แล้วสังเกต: SD (การกระจายของข้อมูล) แทบนิ่ง · SE และ CI หดเข้าเมื่อ n มากขึ้น · ข้อมูลจำลองจาก Sample 1 (µ = 48.7, σ = 5.4 mg)</div>
+  </header>
+
+  <div class="card">
+    <div class="controls">
+      <div class="nrow">
+        <label>ขนาดตัวอย่าง n = <span class="nval" id="nLabel">12</span> เม็ด</label>
+        <input type="range" id="nSlider" min="3" max="300" value="12">
+      </div>
+      <button class="btn" id="resampleBtn">สุ่มตัวอย่างใหม่</button>
+      <button class="btn amber" id="lotBtn">วัดทั้ง lot (n = 100,000)</button>
+      <button class="btn ghost" id="resetBtn">รีเซ็ต</button>
+    </div>
+
+    <canvas id="cv" width="720" height="380" aria-label="ภาพเปรียบเทียบ SD SE และ CI"></canvas>
+
+    <div class="readout">
+      <div class="pill"><span class="v" id="rN">12</span><span class="l">n</span></div>
+      <div class="pill"><span class="v" id="rMean">—</span><span class="l">ค่าเฉลี่ย (mg)</span></div>
+      <div class="pill sd"><span class="v" id="rSD">—</span><span class="l">SD (±)</span></div>
+      <div class="pill se"><span class="v" id="rSE">—</span><span class="l">SE (±)</span></div>
+      <div class="pill ci"><span class="v" id="rCI">—</span><span class="l">95% CI</span></div>
+    </div>
+
+    <div class="note" id="note"></div>
+
+    <div class="legend">
+      <span class="sw" style="background:var(--sd)"></span><b>SD</b> = ข้อมูลกระจายแค่ไหน (อธิบายเม็ดยารายตัว) &nbsp;·&nbsp;
+      <span class="sw" style="background:var(--se)"></span><b>SE</b> = ค่าเฉลี่ยแม่นแค่ไหน = SD/√n &nbsp;·&nbsp;
+      <span class="sw" style="background:var(--ci)"></span><b>95% CI</b> = ช่วงที่น่าจะครอบ µ จริง = mean ± t·SE
+    </div>
+    <details>
+      <summary>กดดูสิ่งที่ควรสังเกต</summary>
+      <div style="margin-top:8px;color:var(--ink)">
+        1) ลาก n ให้น้อย (เช่น 4) แล้วกด "สุ่มตัวอย่างใหม่" ซ้ำ ๆ — เส้นค่าเฉลี่ย (เขียวทึบ) จะเด้งไปมารอบ <b>µ จริง</b> (เส้นประ) มาก · รอยจาง ๆ ด้านบนคือค่าเฉลี่ยจากการสุ่มที่ผ่านมา กระจายกว้างราว ±2·SE<br>
+        2) ลาก n ให้มาก — ค่าเฉลี่ยแทบไม่เด้ง, แถบ SE/CI หดแคบ แต่แถบ SD ยาวเท่าเดิม<br>
+        3) กด "วัดทั้ง lot" — SE = 0, CI ยุบเป็นจุด (รู้ µ เป๊ะ) แต่ SD ยังอยู่ เพราะเม็ดยายังหนักไม่เท่ากัน
+      </div>
+    </details>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  const MU=48.7, SIGMA=5.4, XMIN=30, XMAX=67;
+  const cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+  const W=720, H=380, ML=70, MR=24;
+  const PLOTW=W-ML-MR;
+
+  // ---- ทำให้กราฟคมชัดบนจอมือถือ/retina (high-DPI) ----
+  const DPR=Math.max(1, Math.min(3, window.devicePixelRatio||1));
+  cv.width=W*DPR; cv.height=H*DPR;
+  ctx.scale(DPR,DPR);
+  const FONT="'Mali', -apple-system, system-ui, sans-serif";
+  // วาดซ้ำเมื่อฟอนต์น่ารักโหลดเสร็จ เพื่อให้ตัวอักษรในกราฟเป็นฟอนต์เดียวกับหน้าเว็บ
+  if(document.fonts && document.fonts.ready){ document.fonts.ready.then(()=>draw()); }
+
+  // y-bands (internal coords)
+  const STRIP_Y=52, DOT_TOP=78, DOT_BOT=182;
+  const Y_SD=232, Y_CI=266, Y_SE=300, AXIS_Y=322;
+
+  // t critical (two-sided 95%) by df
+  const T={1:12.706,2:4.303,3:3.182,4:2.776,5:2.571,6:2.447,7:2.365,8:2.306,9:2.262,10:2.228,
+    11:2.201,12:2.179,13:2.160,14:2.145,15:2.131,16:2.120,17:2.110,18:2.101,19:2.093,20:2.086,
+    21:2.080,22:2.074,23:2.069,24:2.064,25:2.060,26:2.056,27:2.052,28:2.048,29:2.045,30:2.042};
+  function tcrit(df){
+    if(df<=30) return T[df]||2.042;
+    const a=[[30,2.042],[40,2.021],[50,2.009],[60,2.000],[80,1.990],[100,1.984],[200,1.972],[1000,1.962]];
+    for(let i=0;i<a.length-1;i++){ if(df<=a[i+1][0]){ const[d0,v0]=a[i],[d1,v1]=a[i+1]; return v0+(v1-v0)*(df-d0)/(d1-d0);} }
+    return 1.96;
+  }
+  function gauss(){ let u=0,v=0; while(!u)u=Math.random(); while(!v)v=Math.random();
+    return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); }
+  const xpix=w=>ML+(w-XMIN)/(XMAX-XMIN)*PLOTW;
+
+  let n=12, dots=[], mean=MU, sd=SIGMA, se=0, ci=[MU,MU], recent=[], wholeLot=false;
+
+  function stats(arr){
+    const m=arr.reduce((a,b)=>a+b,0)/arr.length;
+    const v=arr.reduce((a,b)=>a+(b-m)*(b-m),0)/(arr.length-1);
+    return {m, s:Math.sqrt(v)};
+  }
+
+  function resample(){
+    if(wholeLot){
+      mean=MU; sd=SIGMA; se=0; ci=[MU,MU];
+      dots=Array.from({length:600},()=>MU+SIGMA*gauss());   // representative cloud only
+    } else {
+      dots=Array.from({length:n},()=>MU+SIGMA*gauss());
+      const st=stats(dots); mean=st.m; sd=st.s; se=sd/Math.sqrt(n);
+      const t=tcrit(n-1); ci=[mean-t*se, mean+t*se];
+      recent.push(mean); if(recent.length>40) recent.shift();
+    }
+    draw(); readout();
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    ctx.font='13px '+FONT;
+    ctx.textBaseline='alphabetic';
+
+    // axis
+    ctx.strokeStyle='#e3c9d8'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(ML,AXIS_Y); ctx.lineTo(ML+PLOTW,AXIS_Y); ctx.stroke();
+    ctx.fillStyle='#a690a0'; ctx.textAlign='center';
+    for(let w=30; w<=65; w+=5){
+      const x=xpix(w);
+      ctx.beginPath(); ctx.moveTo(x,AXIS_Y); ctx.lineTo(x,AXIS_Y+5); ctx.stroke();
+      ctx.fillText(w, x, AXIS_Y+18);
+    }
+    ctx.fillText('น้ำหนักเม็ดยา (mg)', ML+PLOTW/2, H-6);
+
+    // true mu dashed line
+    const xmu=xpix(MU);
+    ctx.strokeStyle='#c99bbb'; ctx.setLineDash([5,4]); ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(xmu,40); ctx.lineTo(xmu,AXIS_Y); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='#b87fa6'; ctx.textAlign='left';
+    ctx.fillText('µ จริง = 48.7', xmu+6, 46);
+
+    // recent means strip (sampling distribution)
+    if(recent.length>1){
+      ctx.fillStyle='#a690a0'; ctx.textAlign='left';
+      ctx.fillText('ค่าเฉลี่ยจากการสุ่มซ้ำ (กว้างราว ±2·SE)', ML, STRIP_Y-10);
+      ctx.strokeStyle='rgba(95,182,147,0.45)'; ctx.lineWidth=2;
+      recent.forEach(m=>{ const x=xpix(m);
+        ctx.beginPath(); ctx.moveTo(x,STRIP_Y); ctx.lineTo(x,STRIP_Y+14); ctx.stroke(); });
+    }
+
+    // dotplot of current sample
+    ctx.fillStyle='rgba(143,182,230,0.6)';
+    const seed=(mean*1000)|0;
+    dots.forEach((w,i)=>{
+      const x=xpix(Math.max(XMIN,Math.min(XMAX,w)));
+      const jit=DOT_TOP+8+((Math.sin(seed+i*97.13)*0.5+0.5))*(DOT_BOT-DOT_TOP-16);
+      ctx.beginPath(); ctx.arc(x,jit,3,0,7); ctx.fill();
+    });
+    ctx.fillStyle='#a690a0'; ctx.textAlign='left';
+    ctx.fillText(wholeLot?'ทั้ง lot (แสดงตัวอย่าง)':('ตัวอย่าง n = '+n+' เม็ด'), ML, DOT_TOP-6);
+
+    // sample mean solid line
+    const xm=xpix(mean);
+    ctx.strokeStyle=getCSS('--ci'); ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(xm,DOT_TOP-2); ctx.lineTo(xm,Y_SE+12); ctx.stroke();
+
+    // error bars
+    drawBar(Y_SD, sd, getCSS('--sd'), 'SD', '±'+fmt(sd)+' mg');
+    drawBar(Y_CI, (ci[1]-ci[0])/2, getCSS('--ci'), '95% CI',
+            wholeLot?'≈ 0':('('+fmt(ci[0])+', '+fmt(ci[1])+')'));
+    drawBar(Y_SE, se, getCSS('--se'), 'SE', wholeLot?'≈ 0':('±'+fmt(se)+' mg'));
+  }
+
+  function drawBar(y, halfMg, color, label, valText){
+    const xm=xpix(mean);
+    const hw=(halfMg/(XMAX-XMIN))*PLOTW;
+    // row label in left margin
+    ctx.fillStyle=color; ctx.textAlign='right'; ctx.font='600 14px '+FONT;
+    ctx.fillText(label, ML-12, y+4);
+    ctx.font='13px '+FONT;
+    if(hw<1){ // collapsed (whole lot)
+      ctx.fillStyle=color; ctx.beginPath(); ctx.arc(xm,y,4,0,7); ctx.fill();
+    } else {
+      ctx.strokeStyle=color; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.moveTo(xm-hw,y); ctx.lineTo(xm+hw,y); ctx.stroke();
+      ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(xm-hw,y-6); ctx.lineTo(xm-hw,y+6);
+      ctx.moveTo(xm+hw,y-6); ctx.lineTo(xm+hw,y+6); ctx.stroke();
+    }
+    // value text (placed to the right of the bar, clamped)
+    ctx.fillStyle=color; ctx.textAlign='left';
+    let tx=xm+hw+8; if(tx>W-130) tx=Math.max(ML, xm-hw-8-ctx.measureText(valText).width);
+    ctx.fillText(valText, tx, y+4);
+  }
+
+  function getCSS(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+  function fmt(x){ return (Math.round(x*10)/10).toFixed(1); }
+
+  function readout(){
+    document.getElementById('rN').textContent = wholeLot?'100,000':n;
+    document.getElementById('rMean').textContent = fmt(mean);
+    document.getElementById('rSD').textContent = fmt(sd);
+    document.getElementById('rSE').textContent = wholeLot?'≈0':fmt(se);
+    document.getElementById('rCI').textContent = wholeLot?'จุดเดียว':('('+fmt(ci[0])+', '+fmt(ci[1])+')');
+    const note=document.getElementById('note');
+    if(wholeLot){
+      note.innerHTML='<b>วัดครบทั้ง lot</b> → SE = 0 และ CI ยุบเป็นจุดเดียว (รู้ค่าเฉลี่ยจริงเป๊ะ ไม่ต้องเดา) — แต่ <b>SD ยังเท่าเดิม</b> เพราะเม็ดยายังหนักไม่เท่ากัน · นี่คือหลักฐานว่า SE กับ SD คนละเรื่อง';
+    } else if(n<=10){
+      note.innerHTML='<b>n น้อย</b> → SE และ CI กว้าง: ค่าเฉลี่ยยังเดา µ ไม่แม่น · ลองกด "สุ่มตัวอย่างใหม่" ซ้ำ ๆ จะเห็นค่าเฉลี่ยเด้งไปมารอบเส้นประมาก';
+    } else if(n>=120){
+      note.innerHTML='<b>n เยอะ</b> → SE/CI หดแคบ ค่าเฉลี่ยแม่นขึ้น · แต่แถบ <b>SD แทบไม่เปลี่ยน</b> เพราะการกระจายของข้อมูลเท่าเดิม';
+    } else {
+      note.innerHTML='สังเกต: <b>SD</b> ค่อนข้างนิ่งเมื่อเปลี่ยน n แต่ <b>SE</b> และ <b>CI</b> หดตาม n (SE = SD/√n) · กด "สุ่มตัวอย่างใหม่" เพื่อดูค่าเฉลี่ยเด้ง';
+    }
+  }
+
+  // events
+  const slider=document.getElementById('nSlider');
+  slider.addEventListener('input', ()=>{
+    n=+slider.value; document.getElementById('nLabel').textContent=n;
+    wholeLot=false; recent=[]; resample();
+  });
+  document.getElementById('resampleBtn').addEventListener('click', resample);
+  document.getElementById('lotBtn').addEventListener('click', ()=>{ wholeLot=true; recent=[]; resample(); });
+  document.getElementById('resetBtn').addEventListener('click', ()=>{
+    n=12; slider.value=12; document.getElementById('nLabel').textContent=12;
+    wholeLot=false; recent=[]; resample();
+  });
+
+  resample();
+})();
+</script>
+</body>
+</html>
