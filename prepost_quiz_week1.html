@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>แบบทดสอบ Pre/Post · บทนำชีวสถิติ (Week 1) | Biostatistics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Itim&family=Mali:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#fdf2f8; --ink:#5b4a55; --muted:#a690a0; --line:#f3d7e6;
+    --accent:#e98bb6; --accent-deep:#d76ea2; --card:#ffffff;
+    --wrong:#e98a8a; --wrongdeep:#d96b6b; --ok:#7cc6a8; --okdeep:#5fb693;
+    --okbg:#e7f6ef; --wrongbg:#fdeaea;
+    --pre:#8fc7e8; --post:#f4b07a;   /* สีหัวข้อแยก pre (ฟ้าพาสเทล) / post (พีช) */
+    --soft:#fff6fb;
+    --font-head:'Itim','Mali',cursive,sans-serif;
+    --font-body:'Mali','Itim',-apple-system,system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;padding:24px 18px;color:var(--ink);line-height:1.7;
+    font-family:var(--font-body);
+    background:linear-gradient(160deg,#fdf2f8 0%,#f3f0fd 45%,#eafaf4 100%);
+    background-attachment:fixed;min-height:100vh;}
+  .wrap{max-width:760px;margin:0 auto;}
+  header{border-bottom:3px dotted var(--accent);padding-bottom:14px;margin-bottom:20px;}
+  h1{font-family:var(--font-head);font-size:1.6rem;margin:0 0 4px;color:var(--accent-deep);}
+  .sub{color:var(--muted);font-size:.92rem;}
+  .badge{display:inline-block;font-family:var(--font-head);font-size:.85rem;
+    color:#fff;border-radius:999px;padding:3px 16px;margin-bottom:8px;
+    box-shadow:0 2px 6px rgba(0,0,0,.08);}
+  .badge.pre{background:var(--pre);} .badge.post{background:var(--post);}
+
+  .card{background:var(--card);border:2px solid var(--line);border-radius:18px;
+    padding:18px;margin-bottom:16px;box-shadow:0 6px 18px rgba(231,139,182,.10);}
+  .ui{font-family:var(--font-body);}
+  p.lead{font-size:1rem;color:var(--ink);}
+  .note{font-size:.9rem;color:var(--ink);
+    background:var(--soft);border:2px solid var(--line);border-left:6px solid var(--accent);
+    border-radius:14px;padding:11px 14px;margin:12px 0;}
+
+  label{display:block;font-family:var(--font-head);font-size:1rem;
+    margin:14px 0 4px;color:var(--accent-deep);}
+  label .opt{font-family:var(--font-body);color:var(--muted);font-size:.85rem;}
+  input[type=text]{width:100%;font-family:var(--font-body);font-size:1rem;
+    padding:12px 14px;border:2px solid var(--line);border-radius:14px;background:#fff;color:var(--ink);}
+  input[type=text]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 4px rgba(233,139,182,.15);}
+
+  /* แถบคะแนน/ความคืบหน้า */
+  .bar{display:flex;gap:10px;margin-bottom:16px;}
+  .pill{flex:1;text-align:center;border:2px solid var(--line);border-radius:14px;padding:10px 6px;background:var(--card);}
+  .pill .v{font-family:var(--font-head);font-size:1.2rem;display:block;color:var(--accent-deep);}
+  .pill .l{font-size:.75rem;color:var(--muted);}
+
+  /* การ์ดโจทย์ */
+  .q{margin-bottom:18px;}
+  .q-h{font-family:var(--font-head);font-size:1.08rem;margin-bottom:10px;line-height:1.5;}
+  .q-h .num{display:inline-block;background:var(--soft);border:2px solid var(--accent);
+    border-radius:999px;padding:1px 12px;font-size:.82rem;color:var(--accent-deep);margin-right:7px;}
+
+  /* รูปกราฟประกอบโจทย์ */
+  .qfig{background:var(--soft);border:2px dashed var(--line);border-radius:14px;
+    padding:12px;margin:4px 0 12px;text-align:center;}
+  .qfig svg{width:100%;height:auto;max-width:520px;}
+  .qfig .cap{font-size:.8rem;color:var(--muted);margin-top:6px;}
+
+  .qopt{display:flex;align-items:flex-start;gap:8px;width:100%;text-align:left;
+    border:2px solid var(--line);background:#fff;border-radius:14px;padding:11px 14px;margin-bottom:9px;
+    cursor:pointer;font-family:var(--font-body);font-size:.95rem;transition:.15s;}
+  .qopt:hover:not(.locked){border-color:var(--accent);background:var(--soft);transform:translateY(-1px);}
+  .qopt .key{flex:none;font-family:var(--font-head);color:var(--muted);min-width:1.4em;}
+  .qopt.sel{border-color:var(--accent);background:#fdeaf4;box-shadow:0 3px 10px rgba(233,139,182,.18);}
+  .qopt.sel .key{color:var(--accent-deep);}
+  .qopt.locked{cursor:default;}
+  .qopt.ok{border-color:var(--ok);background:var(--okbg);}
+  .qopt.ok .key{color:var(--okdeep);}
+  .qopt.no{border-color:var(--wrong);background:var(--wrongbg);}
+  .qopt.no .key{color:var(--wrongdeep);}
+  .mark{font-family:var(--font-head);font-size:.95rem;margin:2px 0 8px;}
+  .mark.ok{color:var(--okdeep);} .mark.no{color:var(--wrongdeep);}
+  .why{font-family:var(--font-body);font-size:.92rem;
+    background:var(--okbg);border:2px solid var(--ok);color:var(--ink);
+    border-radius:14px;padding:11px 14px;margin-top:6px;}
+  .why b{color:var(--okdeep);}
+
+  /* ปุ่ม */
+  .btn{font-family:var(--font-head);font-size:1.02rem;
+    background:var(--accent);color:#fff;border:2px solid var(--accent);
+    padding:12px 22px;border-radius:999px;cursor:pointer;transition:.15s;
+    box-shadow:0 4px 12px rgba(231,139,182,.30);}
+  .btn:hover{background:var(--accent-deep);border-color:var(--accent-deep);transform:translateY(-1px);}
+  .btn.ghost{background:transparent;color:var(--accent-deep);box-shadow:none;}
+  .btn.ghost:hover{background:var(--soft);}
+  .btn.block{display:block;width:100%;}
+  .btn:disabled{opacity:.4;cursor:default;transform:none;}
+  .btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;}
+
+  .warn{font-family:var(--font-body);font-size:.9rem;color:var(--wrongdeep);
+    background:var(--wrongbg);border:2px solid var(--wrong);border-radius:14px;padding:10px 14px;margin:10px 0;display:none;}
+
+  /* หน้าผลคะแนน */
+  .score-big{font-family:var(--font-head);font-size:2.8rem;color:var(--accent-deep);text-align:center;margin:6px 0 0;}
+  .score-sub{text-align:center;color:var(--muted);font-size:.95rem;margin-bottom:6px;}
+  .sent{font-size:.88rem;border-radius:14px;
+    padding:10px 14px;margin:10px 0;border:2px solid var(--line);background:var(--soft);}
+  .hide{display:none;}
+
+  /* ===== รองรับหน้าจอโทรศัพท์ ===== */
+  @media (max-width:600px){
+    body{padding:14px 10px;}
+    .wrap{max-width:100%;}
+    h1{font-size:1.3rem;}
+    .sub{font-size:.82rem;}
+    .card{padding:14px;border-radius:14px;}
+    .q-h{font-size:1rem;}
+    .qopt{font-size:.92rem;padding:11px 12px;}
+    .bar{gap:6px;}
+    .pill{padding:8px 4px;}
+    .pill .v{font-size:1rem;}
+    .pill .l{font-size:.68rem;}
+    .btn{width:100%;padding:13px 18px;}
+    .btnrow{flex-direction:column;}
+    .score-big{font-size:2.3rem;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="badge" id="modeBadge"></span>
+    <h1 id="hTitle">แบบทดสอบ — บทนำชีวสถิติ</h1>
+    <div class="sub" id="hSub">Week 1 · Introduction to Biostatistics · 15 ข้อ</div>
+  </header>
+
+  <!-- (0) หน้าเลือกโหมด: แสดงเมื่อเปิดไฟล์ตรง ๆ ไม่มี ?mode= -->
+  <div class="card hide" id="screen-mode">
+    <p class="lead">เลือกโหมดของแบบทดสอบ:</p>
+    <div class="btnrow">
+      <button class="btn" onclick="pickMode('pre')">ก่อนเรียน (Pre-test)</button>
+      <button class="btn ghost" onclick="pickMode('post')">หลังเรียน (Post-test)</button>
+    </div>
+    <div class="note ui">ปกติอาจารย์จะส่งลิงก์โดยตรง: ลงท้าย <b>?mode=pre</b> สำหรับก่อนเรียน และ <b>?mode=post</b> สำหรับหลังเรียน</div>
+  </div>
+
+  <!-- (1) หน้ากรอกชื่อ -->
+  <div class="card hide" id="screen-start">
+    <p class="lead" id="startLead"></p>
+    <label>ชื่อ–นามสกุล <span class="opt">(จำเป็น)</span></label>
+    <input type="text" id="inName" placeholder="เช่น สมหญิง ใจดี" autocomplete="off">
+    <label>รหัสนิสิต <span class="opt">(จำเป็น — ใช้จับคู่คะแนนก่อน/หลังเรียน)</span></label>
+    <input type="text" id="inSID" placeholder="เช่น 66xxxxxxxx" autocomplete="off">
+    <label>รหัสห้อง/กลุ่ม <span class="opt">(ไม่บังคับ — ใส่ตามที่อาจารย์แจ้ง)</span></label>
+    <input type="text" id="inRoom" placeholder="เช่น 160703-S1" autocomplete="off">
+    <div class="warn" id="startWarn">กรุณากรอกชื่อ–นามสกุล และรหัสนิสิตก่อนเริ่มทำ</div>
+    <div class="btnrow"><button class="btn block" onclick="startQuiz()">เริ่มทำแบบทดสอบ →</button></div>
+  </div>
+
+  <!-- (2) หน้าทำข้อสอบ -->
+  <div class="hide" id="screen-quiz">
+    <div class="bar">
+      <div class="pill"><span class="v" id="pAns">0 / 15</span><span class="l">ตอบแล้ว</span></div>
+      <div class="pill"><span class="v" id="pName">—</span><span class="l">ผู้ทำ</span></div>
+    </div>
+    <div class="note ui" id="quizHint"></div>
+    <div id="quizBody"></div>
+    <div class="warn" id="quizWarn"></div>
+    <div class="btnrow"><button class="btn block" id="submitBtn" onclick="submitQuiz()">ส่งคำตอบ</button></div>
+    <div style="height:30px"></div>
+  </div>
+
+  <!-- (3) หน้าผลคะแนน -->
+  <div class="hide" id="screen-result">
+    <div class="card">
+      <div class="score-big" id="rScore">—</div>
+      <div class="score-sub" id="rPercent"></div>
+      <div class="sent" id="rSent"></div>
+      <div class="btnrow">
+        <button class="btn" onclick="downloadCSV()">ดาวน์โหลดผล (.csv)</button>
+        <button class="btn ghost" onclick="location.reload()">ทำใหม่อีกครั้ง</button>
+      </div>
+    </div>
+    <div id="reviewBody"></div>
+    <div style="height:30px"></div>
+  </div>
+</div>
+
+<script>
+/* =======================================================================================
+   ส่วนตั้งค่า — แก้ตรงนี้ที่เดียว (ไม่ต้องแตะโค้ดด้านล่าง)
+   =======================================================================================*/
+
+// (1) วางลิงก์ Web App ของ Google Apps Script ที่นี่ (ดูคู่มือ 6 ขั้นที่อาจารย์ได้รับ)
+//     ถ้ายังไม่ได้ตั้งค่า ปล่อยไว้แบบนี้ก็ได้ — ระบบจะเก็บในเครื่อง + ให้ดาวน์โหลดแทน
+const GOOGLE_SCRIPT_URL = "PASTE_YOUR_WEB_APP_URL_HERE";
+
+// (2) คลังคำถาม 15 ข้อ — แก้ข้อความ/ตัวเลือก/เฉลย/คำอธิบายได้เลย
+//     answer = ลำดับตัวเลือกที่ถูก (เริ่มนับจาก 0 → 0=ก, 1=ข, 2=ค, 3=ง)
+//     explain = คำอธิบายที่จะ "เฉลยเฉพาะโหมดหลังเรียน (post)" เท่านั้น
+//     หมายเหตุ: เฉลยอยู่ในไฟล์นี้เพื่อให้คิดคะแนนได้ ถ้าต้องการซ่อนจาก View Source
+//     ของหน้า pre อย่างเข้มงวด แจ้งผมแยกไฟล์/เข้ารหัสให้ได้
+const QUESTIONS = [
+  { q:"สถิติอนุมาน (inferential statistics) มีหน้าที่หลักตอบคำถามแบบใด?",
+    options:[
+      "สรุปจากตัวอย่าง (sample) ไปยังประชากร (population) และตัดสินว่าความต่างที่เห็นจริงหรือบังเอิญ",
+      "บรรยายและสรุปข้อมูลที่วัดมาได้ให้เห็นภาพรวม",
+      "จัดระเบียบและแสดงข้อมูลด้วยตารางและกราฟ",
+      "คำนวณค่าเฉลี่ยและส่วนเบี่ยงเบนมาตรฐานของข้อมูลที่มี"],
+    answer:0,
+    explain:"ข้อ ข ค ง เป็นงานของ ‘สถิติพรรณนา’ (descriptive) ที่บรรยายสิ่งที่วัดได้ ส่วน ‘สถิติอนุมาน’ ใช้ข้อมูลตัวอย่างไปสรุปถึงประชากร และตอบคำถามแกนของคอร์ส — ความต่างที่เห็นจริงหรือบังเอิญ — ด้วย p-value, CI, effect size" },
+
+  { q:"สัญลักษณ์ใดคือ ‘ค่าเฉลี่ยของตัวอย่าง’ (sample mean)?",
+    options:["μ (mu)","σ (sigma)","x̄ (x-bar)","ρ (rho)"],
+    answer:2,
+    explain:"μ และ σ เป็น ‘พารามิเตอร์’ (parameter) ของประชากร ส่วน x̄ และ s เป็น ‘ค่าสถิติ’ (statistic) ของตัวอย่าง หลักการสำคัญคือเราใช้ค่าสถิติจากตัวอย่างไป ‘ประมาณ’ พารามิเตอร์ของประชากร" },
+
+  { q:"ในการทดสอบฤทธิ์ต้านอนุมูลอิสระด้วยวิธี DPPH ทำไมจึงต้องทำงานกับ ‘ตัวอย่าง’ (sample) แทนที่จะวัดทุกหน่วยในประชากร?",
+    options:[
+      "เพราะการวัดจากตัวอย่างให้ค่าที่แม่นยำกว่าการวัดทั้งหมด",
+      "เพราะเป็นการวัดแบบทำลายตัวอย่าง (destructive testing) ถ้าวัดครบทุกหน่วยก็จะไม่เหลือผลิตภัณฑ์",
+      "เพราะกฎหมายกำหนดให้สุ่มตัวอย่างเท่านั้น",
+      "เพราะค่าเฉลี่ยของตัวอย่างเท่ากับค่าจริงของประชากรเสมอ"],
+    answer:1,
+    explain:"การวัดหลายอย่าง เช่น เวลาแตกตัวหรือ assay เป็นการ ‘ทำลายตัวอย่าง’ จึงวัดครบทุกหน่วยไม่ได้ ต้องสุ่ม และค่าที่ได้เป็น ‘ค่าประมาณ’ ของพารามิเตอร์ ไม่ใช่ค่าจริง" },
+
+  { q:"ตัวแปร ‘ระดับฤทธิ์ (activity level): อ่อน / ปานกลาง / แรง’ จัดอยู่ในมาตรวัด (measurement scale) ใด?",
+    options:["Nominal","Interval","Ratio","Ordinal"],
+    answer:3,
+    explain:"มีลำดับชัดเจน (อ่อน < ปานกลาง < แรง) จึงไม่ใช่ nominal แต่ ‘ช่องว่าง’ ระหว่างระดับไม่เท่ากันและไม่มีหน่วยตัวเลข จึงยังไม่ถึง interval/ratio → เป็น ordinal" },
+
+  { q:"ข้อใดถูกต้องเกี่ยวกับ ‘ศูนย์แท้’ (true zero)?",
+    options:[
+      "ความเข้มข้น (concentration, µg/mL) เป็นมาตร ratio เพราะ 0 หมายถึง ‘ไม่มีสารอยู่จริง’",
+      "อุณหภูมิ 0°C หมายความว่าไม่มีพลังงานความร้อนเลย",
+      "20°C ร้อนเป็นสองเท่าของ 10°C",
+      "มาตร interval และ ratio ใช้การคูณ/หารเปรียบเทียบ ‘กี่เท่า’ ได้เหมือนกัน"],
+    answer:0,
+    explain:"°C เป็น interval — ศูนย์เป็นจุดสมมุติ จึงพูดว่า ‘ร้อนเป็นสองเท่า’ ไม่ได้ (ข, ค ผิด) ส่วนความเข้มข้นมีศูนย์แท้ (0 = ไม่มีสาร) จึงเป็น ratio และคิด ‘กี่เท่า’ ได้ เฉพาะ ratio เท่านั้นที่คูณ/หารได้ (ง ผิด)" },
+
+  { q:"ในการทดลอง ‘เปรียบเทียบประสิทธิภาพ Extract A กับ B โดยวัดค่า IC50’ — ค่า IC50 ทำหน้าที่เป็นตัวแปรชนิดใด?",
+    options:[
+      "ตัวแปรต้น (independent variable) เพราะเป็นสิ่งที่เราจงใจเปลี่ยน",
+      "ตัวแปรควบคุม (control variable)",
+      "ตัวแปรตาม (dependent variable) เพราะเป็นผลลัพธ์ที่เราวัด",
+      "ไม่ใช่ตัวแปร เป็นค่าคงที่"],
+    answer:2,
+    explain:"ชนิดของ extract (A vs B) คือสิ่งที่เราจงใจเปลี่ยน = ตัวแปรต้น (the cause) ส่วน IC50 คือผลที่ตามมาและเราวัด = ตัวแปรตาม (the effect)" },
+
+  { q:"ข้อมูลน้ำหนักเม็ดยา (mg): 36, 45, 48, 50, 50, 51, 51, 53, 1000 — ค่ากลางใด ‘ทนต่อค่าผิดปกติ (outlier) 1000’ ได้ดีที่สุด?",
+    options:["Mean (ค่าเฉลี่ยเลขคณิต)","Median (มัธยฐาน)","ผลรวม (sum)","พิสัย (range)"],
+    answer:1,
+    explain:"ค่า 1000 ดึงค่าเฉลี่ยพุ่งสูง (mean ≈ 153.8) จนไม่เป็นตัวแทนของยาทั่วไป ~50 mg แต่มัธยฐานคือค่าตรงกลางเมื่อเรียงลำดับ (= 50) ไม่ขยับตาม outlier — median จึงทนทานกว่า" },
+
+  { q:"ถ้าข้อมูลเป็นชนิดจัดกลุ่มล้วน เช่น ‘หมู่เลือด (blood type)’ ค่ากลางใดใช้ได้?",
+    options:["Mean เท่านั้น","Median เท่านั้น","ใช้ได้ทั้ง mean และ median","Mode (ฐานนิยม)"],
+    answer:3,
+    explain:"ข้อมูล nominal บวกหรือเรียงลำดับไม่ได้ จึงหา mean/median ไม่ได้ — ฐานนิยม (mode = ค่าที่พบบ่อยที่สุด) เป็นค่ากลางเดียวที่ใช้กับข้อมูลจัดกลุ่มได้" },
+
+  { q:"วัดค่า IC50 ได้ 2, 8, 32 µg/mL — ค่ากลางใด ‘เหมาะสม’ ที่สุดสำหรับข้อมูลชนิดนี้ และเพราะอะไร?",
+    options:[
+      "Geometric mean = 8 เพราะ IC50 เป็นข้อมูลเชิงคูณ (log-normal) และค่าเฉลี่ยเลขคณิตจะประเมินสูงเกินจริง",
+      "Arithmetic mean = 14 เพราะเป็นค่ากลางมาตรฐานที่ใช้เสมอ",
+      "Median = 8 เพราะข้อมูลมีค่าผิดปกติ (outlier)",
+      "Mode เพราะข้อมูลมีค่าซ้ำกัน"],
+    answer:0,
+    explain:"IC50 อยู่ในโลก log-normal (เชิงคูณ ×2, ×4) ค่าเฉลี่ยเลขคณิต (14) ถูกดึงสูงโดยค่า 32 ทำให้สารดู ‘อ่อนฤทธิ์กว่าจริง’ ค่าเฉลี่ยเรขาคณิต (geometric mean) = รากที่สามของ (2×8×32) = รากที่สามของ 512 = 8 อยู่กึ่งกลางของสเกลเชิงคูณพอดี (ชุดนี้ไม่ได้มี outlier จริง จึงไม่ใช่เหตุผลของ median)" },
+
+  { q:"ในการศึกษาหนึ่ง Rutin มี SD = 0.21 และ Ethyl acetate มี SD = 6.65 จะสรุปว่า ‘Ethyl acetate แปรปรวนมากกว่า ~30 เท่า’ ได้หรือไม่?",
+    options:[
+      "ได้ เพราะ 6.65 ÷ 0.21 ≈ 30",
+      "ได้ เพราะ SD เปรียบเทียบข้ามกลุ่มได้เสมอ",
+      "ไม่ได้ ต้องเทียบด้วย %CV (= SD/mean × 100) เพราะ SD มีขนาดโตตามค่าเฉลี่ย",
+      "ไม่ได้ ต้องใช้พิสัย (range) แทน"],
+    answer:2,
+    explain:"SD มีหน่วยและขนาดผูกกับค่าเฉลี่ย (ค่าเฉลี่ยใหญ่ SD ก็ใหญ่ตาม) จึงเทียบ SD ดิบข้ามสเกลตรง ๆ ไม่ได้ ต้องใช้ %CV ซึ่งเป็นความแปรปรวนสัมพัทธ์ — จริง ๆ Rutin (%CV≈3.9%) กับ EtOAc (%CV≈4.3%) ใกล้เคียงกันมาก ไม่ได้ต่างกัน 30 เท่า" },
+
+  { q:"เมื่อขนาดตัวอย่าง (n) เพิ่มขึ้น ข้อใดถูกต้องเกี่ยวกับ SD และ SE?",
+    options:[
+      "ทั้ง SD และ SE เล็กลง",
+      "SE เล็กลง (SE = SD/√n) แต่ SD คงเดิมโดยประมาณ",
+      "SD เล็กลง แต่ SE คงเดิม",
+      "ทั้งคู่ไม่เปลี่ยนแปลง"],
+    answer:1,
+    explain:"SE = SD/√n ยิ่ง n มาก SE ยิ่งเล็ก (ประมาณค่าเฉลี่ยประชากรได้แม่นขึ้น) แต่ SD สะท้อนการกระจายตามธรรมชาติของข้อมูล ไม่หายไปเมื่อเก็บข้อมูลเพิ่ม และพึงระวังว่า SE ไม่ใช่เครื่องมือวัดการกระจายของข้อมูล" },
+
+  { q:"ถ้าต้องการ ‘บรรยายการกระจายของข้อมูล (spread)’ ควรใช้ค่าใด และค่าใดที่มักถูกใช้ผิดเพื่อทำให้ข้อมูลดู ‘นิ่ง/แคบ’ เกินจริง?",
+    options:[
+      "ใช้ SE บรรยาย; CI คือตัวที่มักถูกใช้ผิด",
+      "ใช้ CI บรรยาย; SD คือตัวที่มักถูกใช้ผิด",
+      "ใช้ Range บรรยาย; Median คือตัวที่มักถูกใช้ผิด",
+      "ใช้ SD บรรยาย; SE คือตัวที่มักถูกใช้ผิดเพราะให้แถบสั้นที่สุด"],
+    answer:3,
+    explain:"SD ใช้บรรยายการกระจายดิบของข้อมูล (แถบกว้างสุด) ส่วน CI ใช้เปรียบเทียบ/อนุมานความต่างระหว่างกลุ่ม ส่วน SE ให้แถบสั้นที่สุด จึงมักถูกหยิบมาใช้เพื่อให้กราฟดูต่างชัดเกินจริง (ที่ค่าเฉลี่ย 48.7: SD ±5.4 > 95% CI ±4.15 > SE ±1.8)" },
+
+  { q:"คอเลสเตอรอลของผู้ป่วยอยู่ที่ ‘เปอร์เซ็นไทล์ที่ 90 (90th percentile)’ หมายความว่าอย่างไร?",
+    options:[
+      "90% ของคนมีค่าต่ำกว่าผู้ป่วยรายนี้",
+      "90% ของคนมีค่าสูงกว่าผู้ป่วยรายนี้",
+      "ผู้ป่วยมีค่าคอเลสเตอรอลเท่ากับ 90 mg/dL",
+      "ผู้ป่วยอยู่ตรงกลางพอดีของข้อมูล"],
+    answer:0,
+    explain:"เปอร์เซ็นไทล์ที่ k หมายถึงมีข้อมูล k% อยู่ ‘ต่ำกว่า’ จุดนั้น ดังนั้น P90 = 90% ของคนมีค่าต่ำกว่า (เป็นเรื่องตำแหน่งเปรียบเทียบ ไม่ใช่ค่าดิบ) และเปอร์เซ็นไทล์ที่ 50 (P50) ก็คือมัธยฐาน (median)" },
+
+  { q:"กราฟแท่ง (bar graph) กับฮิสโทแกรม (histogram) ต่างกันอย่างไร?",
+    img:`<svg viewBox="0 0 520 210" xmlns="http://www.w3.org/2000/svg" font-family="Mali, sans-serif">
+      <text x="130" y="20" text-anchor="middle" font-size="14" fill="#d76ea2">กราฟแท่ง (bar graph)</text>
+      <text x="390" y="20" text-anchor="middle" font-size="14" fill="#5fb693">ฮิสโทแกรม (histogram)</text>
+      <line x1="30" y1="170" x2="250" y2="170" stroke="#a690a0" stroke-width="2"/>
+      <line x1="30" y1="40" x2="30" y2="170" stroke="#a690a0" stroke-width="2"/>
+      <rect x="50"  y="100" width="32" height="70"  rx="4" fill="#e98bb6"/>
+      <rect x="100" y="70"  width="32" height="100" rx="4" fill="#e98bb6"/>
+      <rect x="150" y="115" width="32" height="55"  rx="4" fill="#e98bb6"/>
+      <rect x="200" y="85"  width="32" height="85"  rx="4" fill="#e98bb6"/>
+      <text x="66"  y="186" text-anchor="middle" font-size="12" fill="#a690a0">A</text>
+      <text x="116" y="186" text-anchor="middle" font-size="12" fill="#a690a0">B</text>
+      <text x="166" y="186" text-anchor="middle" font-size="12" fill="#a690a0">C</text>
+      <text x="216" y="186" text-anchor="middle" font-size="12" fill="#a690a0">D</text>
+      <text x="130" y="204" text-anchor="middle" font-size="11" fill="#a690a0">แท่งมีช่องว่าง · ข้อมูลกลุ่ม</text>
+      <line x1="290" y1="170" x2="510" y2="170" stroke="#a690a0" stroke-width="2"/>
+      <line x1="290" y1="40" x2="290" y2="170" stroke="#a690a0" stroke-width="2"/>
+      <rect x="300" y="125" width="38" height="45"  fill="#8fc7e8" stroke="#fff" stroke-width="1"/>
+      <rect x="338" y="95"  width="38" height="75"  fill="#8fc7e8" stroke="#fff" stroke-width="1"/>
+      <rect x="376" y="65"  width="38" height="105" fill="#8fc7e8" stroke="#fff" stroke-width="1"/>
+      <rect x="414" y="100" width="38" height="70"  fill="#8fc7e8" stroke="#fff" stroke-width="1"/>
+      <rect x="452" y="135" width="38" height="35"  fill="#8fc7e8" stroke="#fff" stroke-width="1"/>
+      <text x="390" y="204" text-anchor="middle" font-size="11" fill="#a690a0">แท่งติดกัน · ข้อมูลต่อเนื่อง</text>
+    </svg>`,
+    options:[
+      "เหมือนกันทุกอย่าง เป็นเพียงชื่อเรียกที่ต่างกัน",
+      "bar graph ใช้กับข้อมูลต่อเนื่อง ส่วน histogram ใช้กับข้อมูลกลุ่ม",
+      "bar graph แท่งมีช่องว่าง (ข้อมูลกลุ่ม/categorical) ส่วน histogram แท่งติดกัน (ข้อมูลต่อเนื่อง/continuous)",
+      "ในฮิสโทแกรม ความกว้างของแท่งไม่มีความหมาย"],
+    answer:2,
+    explain:"ช่องว่างระหว่างแท่ง = กลุ่มที่แยกจากกัน (categorical) ส่วนแท่งติดกัน = ค่าต่อเนื่องที่ไหลถึงกัน (continuous) และในฮิสโทแกรม ความกว้างของแท่งแทน ‘ช่วงค่า (bin)’ ที่มีความหมาย (ง จึงผิด)" },
+
+  { q:"กราฟแท่งสองอันแสดงค่า SBP หลังรักษา: Drug A = 130 และ Drug B = 136 mmHg (ต่างกัน 6 mmHg) แต่ Drug B ‘ดูสูงกว่ามาก’ — เกิดจากอะไร?",
+    img:`<svg viewBox="0 0 520 230" xmlns="http://www.w3.org/2000/svg" font-family="Mali, sans-serif">
+      <text x="130" y="18" text-anchor="middle" font-size="13" fill="#d96b6b">แกน y เริ่มที่ 128 (ตัดฐาน)</text>
+      <line x1="60" y1="190" x2="240" y2="190" stroke="#a690a0" stroke-width="2"/>
+      <line x1="60" y1="35" x2="60" y2="190" stroke="#a690a0" stroke-width="2"/>
+      <text x="52" y="194" text-anchor="end" font-size="10" fill="#a690a0">128</text>
+      <text x="52" y="40"  text-anchor="end" font-size="10" fill="#a690a0">138</text>
+      <rect x="90"  y="162" width="48" height="28"  rx="4" fill="#8fc7e8"/>
+      <rect x="160" y="78"  width="48" height="112" rx="4" fill="#f4b07a"/>
+      <text x="114" y="206" text-anchor="middle" font-size="11" fill="#a690a0">A=130</text>
+      <text x="184" y="206" text-anchor="middle" font-size="11" fill="#a690a0">B=136</text>
+      <text x="130" y="224" text-anchor="middle" font-size="11" fill="#d96b6b">ดูต่างกันมหาศาล!</text>
+      <text x="390" y="18" text-anchor="middle" font-size="13" fill="#5fb693">แกน y เริ่มที่ 0 (ถูกต้อง)</text>
+      <line x1="320" y1="190" x2="500" y2="190" stroke="#a690a0" stroke-width="2"/>
+      <line x1="320" y1="35" x2="320" y2="190" stroke="#a690a0" stroke-width="2"/>
+      <text x="312" y="194" text-anchor="end" font-size="10" fill="#a690a0">0</text>
+      <text x="312" y="40"  text-anchor="end" font-size="10" fill="#a690a0">140</text>
+      <rect x="350" y="46" width="48" height="144" rx="4" fill="#8fc7e8"/>
+      <rect x="420" y="40" width="48" height="150" rx="4" fill="#f4b07a"/>
+      <text x="374" y="206" text-anchor="middle" font-size="11" fill="#a690a0">A=130</text>
+      <text x="444" y="206" text-anchor="middle" font-size="11" fill="#a690a0">B=136</text>
+      <text x="390" y="224" text-anchor="middle" font-size="11" fill="#5fb693">จริง ๆ ต่างกันนิดเดียว</text>
+    </svg>`,
+    options:[
+      "Drug B มีประสิทธิภาพแย่กว่า Drug A จริง ๆ อย่างมาก",
+      "แกน y ถูกตัดให้เริ่มที่ 128 แทนที่จะเป็น 0 (truncated y-axis) จึงขยายความต่างเล็ก ๆ ให้ดูใหญ่",
+      "เป็นเพราะใช้สีของแท่งต่างกัน",
+      "ข้อมูลถูกบันทึกผิดพลาด"],
+    answer:1,
+    explain:"การให้แกน y เริ่มเหนือศูนย์ (truncated/ตัดฐาน) ทำให้ความต่างเพียง 6 mmHg ดูเป็นช่องว่างมหึมา ก่อนเชื่อ ‘ขนาด’ ของความต่างที่ตาเห็น ให้ดูเสมอว่าแกน y เริ่มที่เท่าไร" }
+];
+
+/* =======================================================================================
+   กลไก — ปกติไม่ต้องแก้ด้านล่างนี้
+   =======================================================================================*/
+const LETTERS = ["ก","ข","ค","ง"];
+const TOTAL = QUESTIONS.length;
+let MODE = "";                 // 'pre' | 'post'
+let answers = new Array(TOTAL).fill(null);
+let startedAt = null, submittedAt = null;
+let person = { name:"", sid:"", room:"" };
+
+function $(id){ return document.getElementById(id); }
+function show(id){ ["screen-mode","screen-start","screen-quiz","screen-result"].forEach(s=>$(s).classList.add("hide")); $(id).classList.remove("hide"); }
+
+// อ่านโหมดจาก URL
+(function init(){
+  const p = new URLSearchParams(location.search).get("mode");
+  if(p==="pre"||p==="post"){ MODE=p; setupMode(); show("screen-start"); }
+  else { show("screen-mode"); }
+})();
+
+function pickMode(m){ MODE=m; const u=new URL(location.href); u.searchParams.set("mode",m); history.replaceState({},"",u); setupMode(); show("screen-start"); }
+
+function setupMode(){
+  const isPre = MODE==="pre";
+  $("modeBadge").textContent = isPre ? "ก่อนเรียน · PRE-TEST" : "หลังเรียน · POST-TEST";
+  $("modeBadge").className = "badge " + (isPre?"pre":"post");
+  $("startLead").textContent = isPre
+    ? "แบบทดสอบก่อนเรียน เพื่อสำรวจพื้นฐานความเข้าใจ ทำตามสบาย ไม่มีผลต่อคะแนน และยังไม่เฉลย"
+    : "แบบทดสอบหลังเรียน ทำเสร็จแล้วระบบจะเฉลยพร้อมคำอธิบายทุกข้อทันที";
+  $("quizHint").innerHTML = isPre
+    ? "ตอบให้ครบทั้ง 15 ข้อแล้วกด ‘ส่งคำตอบ’ — แบบทดสอบนี้<b>ยังไม่เฉลย</b> (จะเฉลยในแบบทดสอบหลังเรียน)"
+    : "ตอบให้ครบทั้ง 15 ข้อแล้วกด ‘ส่งคำตอบ’ — <b>กดส่งแล้วจะเฉลยทันที</b>";
+}
+
+function startQuiz(){
+  person.name = $("inName").value.trim();
+  person.sid  = $("inSID").value.trim();
+  person.room = $("inRoom").value.trim();
+  if(!person.name || !person.sid){ $("startWarn").style.display="block"; return; }
+  $("startWarn").style.display="none";
+  $("pName").textContent = person.name;
+  renderQuiz();
+  startedAt = new Date();
+  show("screen-quiz");
+  window.scrollTo({top:0});
+}
+
+function renderQuiz(){
+  let html="";
+  QUESTIONS.forEach((item,qi)=>{
+    const opts = item.options.map((t,oi)=>
+      `<div class="qopt" id="opt-${qi}-${oi}" onclick="select(${qi},${oi})">
+         <span class="key">${LETTERS[oi]}.</span><span>${t}</span></div>`).join("");
+    const fig = item.img ? `<div class="qfig">${item.img}</div>` : "";
+    html += `<div class="card q" id="q-${qi}">
+        <div class="q-h"><span class="num">ข้อ ${qi+1}</span>${item.q}</div>${fig}${opts}</div>`;
+  });
+  $("quizBody").innerHTML = html;
+  updateProgress();
+}
+
+function select(qi,oi){
+  answers[qi]=oi;
+  for(let o=0;o<QUESTIONS[qi].options.length;o++) $(`opt-${qi}-${o}`).classList.remove("sel");
+  $(`opt-${qi}-${oi}`).classList.add("sel");
+  updateProgress();
+}
+
+function updateProgress(){
+  const done = answers.filter(a=>a!==null).length;
+  $("pAns").textContent = done + " / " + TOTAL;
+}
+
+function submitQuiz(){
+  const firstMissing = answers.findIndex(a=>a===null);
+  if(firstMissing!==-1){
+    const done = answers.filter(a=>a!==null).length;
+    const w=$("quizWarn");
+    w.textContent = `ยังตอบไม่ครบ (ตอบแล้ว ${done}/${TOTAL}) — กรุณาตอบข้อ ${firstMissing+1} ให้ครบก่อนส่ง`;
+    w.style.display="block";
+    $(`q-${firstMissing}`).scrollIntoView({behavior:"smooth",block:"center"});
+    return;
+  }
+  $("quizWarn").style.display="none";
+  $("submitBtn").disabled=true;
+  submittedAt = new Date();
+
+  let score=0;
+  QUESTIONS.forEach((item,qi)=>{ if(answers[qi]===item.answer) score++; });
+  const percent = Math.round(score/TOTAL*100);
+  const durationSec = Math.round((submittedAt-startedAt)/1000);
+
+  const record = {
+    name:person.name, studentId:person.sid, classCode:person.room,
+    quizType:MODE, score:score, total:TOTAL, percent:percent,
+    durationSec:durationSec, startedAt:startedAt.toISOString(), submittedAt:submittedAt.toISOString(),
+    choices: answers.map(a=>LETTERS[a])
+  };
+  window._lastRecord = record;
+
+  saveLocal(record);
+  sendToSheet(record);
+  showResult(record);
+  show("screen-result");
+  window.scrollTo({top:0});
+}
+
+/* ---------- เก็บในเครื่อง (localStorage) ---------- */
+function saveLocal(record){
+  try{
+    const KEY="biostat_w1_quiz_results";
+    const arr = JSON.parse(localStorage.getItem(KEY) || "[]");
+    arr.push(record);
+    localStorage.setItem(KEY, JSON.stringify(arr));
+  }catch(e){ /* บางเบราว์เซอร์ปิด storage — ข้ามได้ ยังมีดาวน์โหลด/ส่งชีต */ }
+}
+
+/* ---------- ส่งเข้า Google Sheet (no-cors fire-and-forget) ---------- */
+function sendToSheet(record){
+  const configured = GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL.indexOf("PASTE_")===-1;
+  const sent=$("rSent");
+  if(!configured){
+    sent.innerHTML = "ℹ️ ยังไม่ได้เชื่อม Google Sheet — ผลถูกบันทึกในเครื่องของคุณแล้ว และกด ‘ดาวน์โหลดผล (.csv)’ เพื่อส่งให้อาจารย์ได้";
+    return;
+  }
+  try{
+    fetch(GOOGLE_SCRIPT_URL, {
+      method:"POST", mode:"no-cors",
+      headers:{ "Content-Type":"text/plain;charset=utf-8" },
+      body: JSON.stringify(record)
+    });
+    sent.innerHTML = "✅ ส่งผลให้อาจารย์เรียบร้อย (บันทึกในเครื่องด้วย) — ถ้าไม่แน่ใจว่าส่งถึง สามารถกด ‘ดาวน์โหลดผล (.csv)’ เก็บไว้ได้";
+  }catch(e){
+    sent.innerHTML = "⚠️ ส่งออนไลน์ไม่สำเร็จ แต่ผลถูกบันทึกในเครื่องแล้ว — กรุณากด ‘ดาวน์โหลดผล (.csv)’ ส่งให้อาจารย์";
+  }
+}
+
+/* ---------- หน้าผลคะแนน ---------- */
+function showResult(record){
+  $("rScore").textContent = record.score + " / " + record.total;
+  if(MODE==="pre"){
+    $("rPercent").innerHTML = `คะแนน ${record.percent}% · <b>ยังไม่เฉลย</b> — เฉลยจะปรากฏในแบบทดสอบหลังเรียน`;
+    $("reviewBody").innerHTML = "";
+  } else {
+    $("rPercent").textContent = "คะแนน " + record.percent + "% · ใช้เวลา " + record.durationSec + " วินาที";
+    renderReview();
+  }
+}
+
+function renderReview(){
+  let html = `<div class="note ui"><b>เฉลยพร้อมคำอธิบาย</b> — ตรวจดูเหตุผลของแต่ละข้อ โดยเฉพาะข้อที่ตอบผิด</div>`;
+  QUESTIONS.forEach((item,qi)=>{
+    const chosen = answers[qi];
+    const correct = item.answer;
+    const isOK = chosen===correct;
+    const opts = item.options.map((t,oi)=>{
+      let cls="qopt locked";
+      if(oi===correct) cls+=" ok";
+      else if(oi===chosen) cls+=" no";
+      let tag="";
+      if(oi===correct) tag=' <b>(คำตอบที่ถูก)</b>';
+      else if(oi===chosen) tag=' <b>(คุณเลือกข้อนี้)</b>';
+      return `<div class="${cls}"><span class="key">${LETTERS[oi]}.</span><span>${t}${tag}</span></div>`;
+    }).join("");
+    const mark = isOK ? `<div class="mark ok">✓ ตอบถูก</div>` : `<div class="mark no">✗ ตอบผิด</div>`;
+    const fig = item.img ? `<div class="qfig">${item.img}</div>` : "";
+    html += `<div class="card q">
+        <div class="q-h"><span class="num">ข้อ ${qi+1}</span>${item.q}</div>${fig}
+        ${mark}${opts}
+        <div class="why"><b>คำอธิบาย:</b> ${item.explain}</div></div>`;
+  });
+  $("reviewBody").innerHTML = html;
+}
+
+/* ---------- ดาวน์โหลด CSV (รองรับภาษาไทยใน Excel ด้วย BOM) ---------- */
+function downloadCSV(){
+  const r = window._lastRecord; if(!r) return;
+  const head = ["เวลาส่ง","ชื่อ-นามสกุล","รหัสนิสิต","รหัสห้อง","ประเภท","คะแนน","เต็ม","ร้อยละ","เวลาที่ใช้(วินาที)"];
+  for(let i=1;i<=TOTAL;i++) head.push("ข้อ"+i);
+  const row = [r.submittedAt, r.name, r.studentId, r.classCode, r.quizType, r.score, r.total, r.percent, r.durationSec].concat(r.choices);
+  const esc = v => '"' + String(v).replace(/"/g,'""') + '"';
+  const csv = "\uFEFF" + head.map(esc).join(",") + "\n" + row.map(esc).join(",") + "\n";
+  const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  const safe = (r.studentId || r.name || "result").replace(/[^\wก-๙]/g,"_");
+  a.download = `quiz_${r.quizType}_${safe}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+</script>
+</body>
+</html>
