@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Binomial Distribution</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ====== Theme colors / sizes — matches index.html ====== */
+  :root{
+    --paper:#faf6fb; --ink:#36313d; --muted:#8c8598; --line:#ece4f1;
+    --accent:#7c6cdc;        /* brand purple = emphasis / selected k */
+    --brand-d:#5f4fc0; --brand-soft:#f1ecfc;
+    --accent2:#2f9e7d;       /* mint = most likely count (mode) */
+    --mint-soft:#e6f6ef;
+    --card:#ffffff;
+    --bar:#d9d0f3;           /* default P(X=k) bars (soft purple) */
+    --barhi:#7c6cdc;         /* selected-k bar */
+    --display:'Mali',Sarabun,system-ui,sans-serif;
+    --body:'Sarabun',system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{margin:0;padding:40px 20px 56px;color:var(--ink);font-family:var(--body);line-height:1.62;
+    background:
+      radial-gradient(1100px 560px at 10% -10%, #f1e9fd 0%, transparent 58%),
+      radial-gradient(900px 480px at 102% -4%, #fdebf2 0%, transparent 52%),
+      var(--paper);
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  .wrap{max-width:780px;margin:0 auto;}
+  header{margin-bottom:6px;padding-bottom:18px;border-bottom:2px dashed #e4daf0;}
+  h1{font-family:var(--display);font-weight:700;font-size:clamp(1.4rem,4vw,1.8rem);
+    margin:0 0 6px;color:#4b3f86;letter-spacing:-.01em;line-height:1.25;}
+  .sub{color:var(--muted);font-size:.92rem;}
+
+  .card{background:var(--card);border:1.5px solid var(--line);border-radius:18px;
+    padding:20px 22px;margin:20px 0 16px;box-shadow:0 4px 16px rgba(95,79,192,.06);}
+  .lead{font-size:1rem;margin:0 0 4px;color:#52495d;}
+  .note{font-size:.86rem;color:var(--muted);margin-top:10px;line-height:1.65;}
+
+  /* controls */
+  .ctrls{font-size:.9rem;margin-top:6px;}
+  .row{display:flex;align-items:center;gap:10px;margin:12px 0;}
+  .row label{min-width:165px;color:var(--ink);font-weight:500;}
+  .row input[type=range]{flex:1;accent-color:var(--accent);}
+  .row .val{min-width:62px;text-align:right;font-family:var(--display);font-weight:600;color:var(--brand-d);}
+  .btns{display:flex;gap:9px;flex-wrap:wrap;margin-top:8px;}
+  button.act{font-family:var(--display);font-weight:600;font-size:.88rem;cursor:pointer;transition:.16s;
+    border:1.5px solid var(--accent);background:var(--accent);color:#fff;border-radius:999px;padding:9px 18px;
+    box-shadow:0 4px 12px rgba(124,108,220,.25);}
+  button.act:hover{background:var(--brand-d);border-color:var(--brand-d);transform:translateY(-1px);}
+  button.ghost{border:1.5px solid var(--line);background:var(--card);color:var(--brand-d);box-shadow:none;}
+  button.ghost:hover{background:var(--brand-soft);border-color:#cdbdf3;}
+
+  /* formula breakdown (anatomy) */
+  .anatomy{font-family:var(--body);background:var(--brand-soft);border:1.5px solid #ddd2f5;
+    border-radius:14px;padding:13px 16px;margin-top:14px;font-size:.96rem;color:var(--ink);line-height:1.95;}
+  .anatomy .eq{display:block;}
+  .anatomy b{color:var(--brand-d);}
+  .anatomy sup{font-size:.72em;}
+
+  /* stat pills */
+  .stats{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;}
+  .pill{flex:1;min-width:120px;text-align:center;border:1.5px solid var(--line);border-radius:14px;padding:10px 6px;background:var(--paper);}
+  .pill .v{font-family:var(--display);font-size:1.2rem;font-weight:700;display:block;color:var(--brand-d);}
+  .pill .l{font-size:.72rem;color:var(--muted);}
+
+  canvas{width:100%;height:auto;display:block;margin-top:10px;
+    background:var(--paper);border:1.5px solid var(--line);border-radius:14px;}
+  .legend{font-size:.78rem;color:var(--muted);
+    display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;}
+  .legend i{display:inline-block;width:14px;height:10px;border-radius:3px;margin-right:5px;vertical-align:middle;}
+  .legend .tri{color:var(--accent2);font-weight:bold;}
+
+  /* clinical interpretation note */
+  .callout{font-size:.85rem;background:var(--mint-soft);
+    border:1.5px solid #c4e7d8;color:#1f6b51;border-radius:14px;padding:11px 14px;margin-top:12px;line-height:1.65;}
+  .callout b{color:#155740;}
+
+  /* reference */
+  .refs{font-size:.78rem;color:var(--muted);
+    border-top:1.5px solid var(--line);margin-top:18px;padding-top:12px;line-height:1.6;}
+  .refs a{color:var(--brand-d);word-break:break-all;}
+  .refs b{color:var(--ink);}
+
+  @media(max-width:560px){
+    body{padding:26px 14px 44px;}
+    .card{padding:16px 16px;border-radius:15px;}
+    .row{flex-wrap:wrap;}
+    .row label{min-width:100%;}
+    .row .val{min-width:48px;}
+    button.act{flex:1 1 100%;}
+    .pill{min-width:46%;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>The Binomial Distribution</h1>
+    <div class="sub">Random variables &amp; the binomial model · Self-practice tool · Drag the sliders to explore</div>
+  </header>
+
+  <div class="card">
+    <p class="lead">A trial treats <b>n</b> patients, each with probability <b>p</b> of being classified as a responder →
+      <b>X</b> = the number of responders follows a Binomial(n, p) distribution. Choose <b>k</b> to see the chance of
+      <i>exactly</i> k responders, and how the formula is assembled.</p>
+
+    <div class="ctrls">
+      <div class="row"><label>Patients (n)</label><input id="s_n" type="range" min="2" max="40" value="5"><span class="val" id="v_n">5</span></div>
+      <div class="row"><label>Response probability (p)</label><input id="s_p" type="range" min="5" max="95" value="68"><span class="val" id="v_p">0.68</span></div>
+      <div class="row"><label>View P(X = k) at k =</label><input id="s_k" type="range" min="0" max="5" value="4"><span class="val" id="v_k">4</span></div>
+      <div class="btns">
+        <button class="act" id="preset1">Butterbur example (n=5, p=0.68, k=4)</button>
+        <button class="act ghost" id="preset2">Scale up to n = 30</button>
+      </div>
+    </div>
+
+    <canvas id="cv" width="700" height="320"></canvas>
+    <div class="legend">
+      <span><i style="background:var(--bar)"></i>P(X = k), other values</span>
+      <span><i style="background:var(--barhi)"></i>Selected k</span>
+      <span><span class="tri">▼</span> Most likely count (mode)</span>
+      <span>– – Mean E[X] = np</span>
+    </div>
+
+    <div class="anatomy">
+      <span class="eq" id="eq_top"></span>
+      <span class="eq" id="eq_mid"></span>
+      <span class="eq" id="eq_res"></span>
+    </div>
+
+    <div class="stats">
+      <div class="pill"><span class="v" id="p_mean">3.4</span><span class="l">Expected value E[X] = np</span></div>
+      <div class="pill"><span class="v" id="p_sd">1.04</span><span class="l">SD = √(np(1−p))</span></div>
+      <div class="pill"><span class="v" id="p_pk">0.342</span><span class="l">P(X = k), selected</span></div>
+      <div class="pill"><span class="v" id="p_mode">4</span><span class="l" id="p_model">mode · P = 34.2%</span></div>
+    </div>
+
+    <div class="callout" id="callout"></div>
+    <p class="note" id="note"></p>
+  </div>
+
+  <p class="sub" style="text-align:center;margin-top:4px;">
+    Adjust the theme/ranges in the &lt;style&gt; block (--accent, etc.) and the slider min/max · Single self-contained file · works offline
+  </p>
+
+  <div class="refs">
+    <b>Reference</b><br>
+    Lipton RB, et al. Petasites hybridus root (butterbur) is an effective preventive treatment for migraine. Neurology. 2004;63(12):2240–4. — PubMed: <a href="https://pubmed.ncbi.nlm.nih.gov/15623680/">https://pubmed.ncbi.nlm.nih.gov/15623680/</a>
+  </div>
+</div>
+
+<script>
+/* ===== Calculations (no need to edit) ===== */
+
+// Binomial pmf via a stable recurrence (no overflow for large n)
+function binomPmf(n, p){
+  const out = new Array(n+1);
+  out[0] = Math.pow(1-p, n);
+  for(let k=1; k<=n; k++){ out[k] = out[k-1] * ((n-k+1)/k) * (p/(1-p)); }
+  return out;
+}
+// Binomial coefficient C(n,k) via cumulative product
+function nCk(n,k){
+  if(k<0||k>n) return 0; k=Math.min(k,n-k); let r=1;
+  for(let i=1;i<=k;i++){ r = r*(n-k+i)/i; }
+  return Math.round(r);
+}
+// Mode of Binomial(n,p)
+function modeOf(n,p){ let m=Math.floor((n+1)*p); if(m>n) m=n; return m; }
+
+// Number formatting (commas for large values, scientific notation for very small)
+function fmt(x){
+  if(x===0) return '0';
+  if(x>=1000) return Math.round(x).toLocaleString('en-US');
+  if(x>=0.001) return (+x.toPrecision(3)).toString();
+  return x.toExponential(2);
+}
+
+/* ===== Drawing helpers ===== */
+function setupCanvas(cv){
+  const ratio = window.devicePixelRatio || 1;
+  const cssW = cv.clientWidth || 700;
+  const cssH = parseInt(cv.getAttribute('height'));
+  cv.width = cssW * ratio; cv.height = cssH * ratio;
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(ratio,0,0,ratio,0,0);
+  return {ctx, W:cssW, H:cssH};
+}
+function getCSS(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+
+/* ===== Controls ===== */
+const sN=document.getElementById('s_n'), sP=document.getElementById('s_p'), sK=document.getElementById('s_k');
+
+function draw(){
+  const n=+sN.value, p=+sP.value/100;
+  // k cannot exceed n
+  sK.max=n; let k=Math.min(+sK.value, n); sK.value=k;
+  document.getElementById('v_n').textContent=n;
+  document.getElementById('v_p').textContent=p.toFixed(2);
+  document.getElementById('v_k').textContent=k;
+
+  const pmf=binomPmf(n,p);
+  const mean=n*p, sd=Math.sqrt(n*p*(1-p)), mo=modeOf(n,p);
+  const C=nCk(n,k), pk=Math.pow(p,k), qk=Math.pow(1-p,n-k), res=pmf[k];
+
+  // formula breakdown
+  document.getElementById('eq_top').innerHTML =
+    'P(X = '+k+') = <b>C('+n+', '+k+')</b> × <b>'+p.toFixed(2)+'<sup>'+k+'</sup></b> × <b>'+(1-p).toFixed(2)+'<sup>'+(n-k)+'</sup></b>';
+  document.getElementById('eq_mid').innerHTML =
+    '= '+fmt(C)+' × '+fmt(pk)+' × '+fmt(qk);
+  document.getElementById('eq_res').innerHTML =
+    '= <b>'+(res>=0.001? res.toFixed(3) : res.toExponential(2))+'</b>  ('+(res*100).toFixed(1)+'%)';
+
+  // stat pills
+  document.getElementById('p_mean').textContent=mean.toFixed(1);
+  document.getElementById('p_sd').textContent=sd.toFixed(2);
+  document.getElementById('p_pk').textContent= res>=0.001? res.toFixed(3) : res.toExponential(2);
+  document.getElementById('p_mode').textContent=mo;
+  document.getElementById('p_model').textContent='mode · P = '+(pmf[mo]*100).toFixed(1)+'%';
+
+  // interpretation note (p bundles the placebo response)
+  document.getElementById('callout').innerHTML =
+    '<b>Interpreting p carefully:</b> p is the probability of being classified as a responder under treatment — '+
+    'not the probability that the drug worked, because the placebo group also contains responders '+
+    '(about 49% in the Butterbur trial). The true drug effect is the <b>difference</b> between the two groups.';
+
+  // 'most likely is not likely' note
+  document.getElementById('note').textContent =
+    'The most likely count is '+mo+' patients, yet its probability is only '+(pmf[mo]*100).toFixed(1)+'% — '+
+    'even the most likely outcome is far from certain. Increase n and the probability of the mode shrinks further, '+
+    'as the total probability spreads across more values.';
+
+  // ===== draw =====
+  const cv=document.getElementById('cv'); const {ctx,W,H}=setupCanvas(cv);
+  ctx.clearRect(0,0,W,H);
+  const padL=8, padR=8, padT=22, padB=30;
+  const plotW=W-padL-padR, plotH=H-padT-padB;
+  const maxP=Math.max(...pmf), bw=plotW/(n+1), x0=padL, yB=padT+plotH;
+
+  // bars
+  for(let i=0;i<=n;i++){
+    const bx=x0+i*bw, bh=(pmf[i]/maxP)*plotH;
+    ctx.fillStyle = (i===k) ? getCSS('--barhi') : getCSS('--bar');
+    ctx.fillRect(bx+bw*0.14, yB-bh, bw*0.72, bh);
+  }
+
+  // probability label above the selected bar
+  const selBh=(pmf[k]/maxP)*plotH, selX=x0+k*bw+bw*0.5;
+  ctx.font='bold 12px Sarabun,system-ui,sans-serif'; ctx.textAlign='center';
+  const lbl=(pmf[k]*100).toFixed(1)+'%';
+  if(yB-selBh-16 > padT){ ctx.fillStyle=getCSS('--accent'); ctx.fillText(lbl, selX, yB-selBh-5); }
+  else { ctx.fillStyle='#ffffff'; ctx.fillText(lbl, selX, yB-selBh+14); }
+
+  // ▼ marker above the mode bar
+  const moBh=(pmf[mo]/maxP)*plotH, moX=x0+mo*bw+bw*0.5, ty=Math.max(padT-2, yB-moBh-18);
+  ctx.fillStyle=getCSS('--accent2'); ctx.beginPath();
+  ctx.moveTo(moX-6,ty); ctx.lineTo(moX+6,ty); ctx.lineTo(moX,ty+9); ctx.closePath(); ctx.fill();
+
+  // mean line (dashed)
+  const mx=x0+(mean+0.5)*bw;
+  ctx.strokeStyle=getCSS('--ink'); ctx.setLineDash([4,3]); ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(mx,padT); ctx.lineTo(mx,yB); ctx.stroke(); ctx.setLineDash([]);
+
+  // x-axis
+  ctx.font='11px Sarabun,system-ui,sans-serif';
+  const step=Math.max(1,Math.ceil(n/12));
+  for(let i=0;i<=n;i+=step){
+    ctx.fillStyle = (i===k)? getCSS('--accent') : getCSS('--muted');
+    ctx.font = (i===k)? 'bold 11px Sarabun,system-ui,sans-serif' : '11px Sarabun,system-ui,sans-serif';
+    ctx.fillText(i, x0+(i+0.5)*bw, yB+16);
+  }
+  ctx.fillStyle=getCSS('--ink'); ctx.font='11px Sarabun,system-ui,sans-serif';
+  ctx.fillText('Number of responders (k)', x0+plotW/2, H-5);
+}
+
+/* ===== Preset buttons ===== */
+document.getElementById('preset1').addEventListener('click',()=>{
+  sN.value=5; sP.value=68; sK.max=5; sK.value=4; draw();
+});
+document.getElementById('preset2').addEventListener('click',()=>{
+  sN.value=30; sP.value=68; sK.max=30; sK.value=modeOf(30,0.68); draw();
+});
+
+/* ===== Event wiring ===== */
+[sN,sP,sK].forEach(el=>el.addEventListener('input',draw));
+window.addEventListener('resize',draw);
+
+// initial state (matches slides 7-8)
+draw();
+// redraw once the cute web fonts finish loading so canvas labels match the page
+if(document.fonts && document.fonts.ready){ document.fonts.ready.then(draw); }
+</script>
+</body>
+</html>
