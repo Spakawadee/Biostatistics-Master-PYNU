@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Normal area explorer | Biostat Week 2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ====== ปรับธีมสี/ขนาดได้ที่นี่ (เข้าชุดกับ widget สัปดาห์ 1, 2-binomial และ 3) ====== */
+  :root{
+    --paper:#dde6cf;          /* เขียวเซจอ่อนแนววินเทจ = พื้นหลังหน้า */
+    --ink:#3c4a3a; --muted:#7b7a64; --line:#ddd6c2;
+    --accent:#5e8c64;         /* เขียวเซจวินเทจ = เส้นโค้ง/เน้น/ปุ่ม */
+    --accent2:#cf9a5e;        /* พีช-อำพันวินเทจ = เส้นตัด (cut line) ที่ลากได้ */
+    --card:#fffdf6;           /* ครีม = การ์ด */
+    --soft:#eef2e6;           /* เซจอ่อนมาก = พื้นกล่อง pill */
+    --shade:rgba(94,140,100,.20);  /* พื้นที่แรเงาใต้โค้ง */
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{margin:0;padding:24px;background:var(--paper);color:var(--ink);
+    font-family:'Mali',system-ui,sans-serif;line-height:1.6;}
+  .wrap{max-width:760px;margin:0 auto;}
+  header{border-bottom:2px dashed rgba(94,140,100,.5);padding-bottom:12px;margin-bottom:18px;}
+  h1{font-size:1.45rem;font-weight:700;margin:0 0 4px;color:#3f5e44;}
+  .sub{color:var(--muted);font-size:.9rem;font-family:Mali,system-ui,sans-serif;}
+
+  .card{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:14px;
+    padding:18px;margin-bottom:14px;box-shadow:0 6px 18px rgba(60,90,60,.15);}
+  .lead{font-size:.97rem;margin:0 0 12px;}
+  .note{font-family:Mali,system-ui,sans-serif;font-size:.84rem;color:var(--muted);margin-top:10px;}
+
+  /* ปุ่มเลือกโหมด (หาง) — สไตล์เดียวกับแท็บ */
+  .tabs{display:flex;gap:8px;margin-bottom:12px;font-family:Mali,system-ui,sans-serif;}
+  .tab{flex:1;text-align:center;padding:10px 8px;border:1px solid var(--line);border-radius:8px;
+    background:var(--card);cursor:pointer;font-size:.9rem;color:var(--muted);user-select:none;}
+  .tab.active{border-color:var(--accent);color:var(--accent);font-weight:bold;background:#fafaf7;}
+
+  /* แถวตัวเลือกแกน + เส้นอ้างอิง */
+  .optrow{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+    font-family:Mali,system-ui,sans-serif;font-size:.86rem;margin-bottom:6px;}
+  .seg{border:1px solid var(--line);background:var(--card);color:var(--muted);cursor:pointer;
+    padding:6px 12px;font-size:.84rem;font-family:inherit;}
+  .seg:first-of-type{border-radius:8px 0 0 8px;}
+  .seg:last-of-type{border-radius:0 8px 8px 0;border-left:none;}
+  .seg.active{border-color:var(--accent);color:#fff;background:var(--accent);}
+  .axis{display:flex;align-items:center;gap:0;}
+  .axis>span{margin-right:8px;color:var(--ink);}
+  .chk{display:flex;align-items:center;gap:6px;color:var(--ink);cursor:pointer;}
+  .chk input{accent-color:var(--accent);}
+
+  canvas{width:100%;height:auto;display:block;margin-top:4px;cursor:ew-resize;touch-action:none;}
+
+  .legend{font-family:Mali,system-ui,sans-serif;font-size:.78rem;color:var(--muted);
+    display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;}
+  .legend i{display:inline-block;width:14px;height:10px;border-radius:2px;margin-right:5px;vertical-align:middle;}
+  .legend i.ln{height:0;border-top:3px solid;border-radius:0;width:16px;}
+
+  /* แผงค่าตัวเลข */
+  .stats{display:flex;gap:10px;flex-wrap:wrap;font-family:Mali,system-ui,sans-serif;margin-top:14px;}
+  .pill{flex:1;min-width:110px;text-align:center;border:1px solid var(--line);border-radius:10px;padding:9px 6px;background:var(--soft);}
+  .pill .v{font-size:1.15rem;font-weight:bold;display:block;color:var(--accent);}
+  .pill .l{font-size:.72rem;color:var(--muted);}
+
+  /* กล่องสูตร Excel */
+  .formula{font-family:'SFMono-Regular',Consolas,'Liberation Mono',monospace;font-size:.82rem;
+    background:#eef3f1;color:#27604f;border-radius:8px;padding:10px 12px;margin-top:12px;
+    white-space:pre-wrap;word-break:break-word;}
+  .formula b{color:var(--accent2);}
+
+  /* กล่องค่าจากตาราง z ทั้ง 3 แบบ */
+  .ztbl{font-family:Mali,system-ui,sans-serif;font-size:.82rem;color:var(--ink);
+    background:var(--paper);border:1px dashed var(--line);border-radius:8px;padding:10px 12px;margin-top:10px;}
+  .ztbl .h{font-weight:bold;color:var(--muted);font-size:.78rem;margin-bottom:6px;}
+  .ztbl .sub{color:var(--accent2);font-weight:bold;font-size:.76rem;margin:8px 0 2px;}
+  .ztbl .zrow{display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-top:1px solid #ece7db;}
+  .ztbl .zrow:first-of-type{border-top:none;}
+  .ztbl .zrow b{color:var(--accent);font-variant-numeric:tabular-nums;}
+  .ztbl .foot{color:var(--muted);font-size:.72rem;margin-top:7px;line-height:1.45;}
+
+  /* ตัวควบคุมตัวเลข */
+  .ctrls{font-family:Mali,system-ui,sans-serif;font-size:.86rem;margin-top:14px;}
+  .nums{display:flex;gap:14px;flex-wrap:wrap;align-items:center;}
+  .fld{display:flex;align-items:center;gap:6px;}
+  .fld label{color:var(--ink);min-width:auto;}
+  .fld input{width:84px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;
+    font-family:inherit;font-size:.9rem;color:var(--ink);background:#fff;text-align:right;}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+  button.act{font-family:Mali,system-ui,sans-serif;font-size:.86rem;cursor:pointer;
+    border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:8px;padding:9px 14px;}
+  button.ghost{border:1px solid var(--line);background:var(--card);color:var(--muted);}
+  .hidden{display:none;}
+
+  /* ===== รองรับหน้าจอโทรศัพท์ / iPad ===== */
+  @media (max-width:600px){
+    body{padding:16px 12px;}
+    .wrap{max-width:100%;}
+    h1{font-size:1.18rem;}
+    .sub{font-size:.82rem;}
+    .card{padding:14px;}
+    .tabs{gap:6px;}
+    .tab{font-size:.82rem;padding:9px 4px;}
+    .optrow{font-size:.82rem;gap:8px;}
+    .pill{min-width:46%;}
+    .nums{gap:10px;}
+    .fld input{width:72px;}
+    button.act{flex:1 1 100%;text-align:center;}
+    .formula{font-size:.76rem;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Normal area explorer — พื้นที่ใต้โค้ง = ความน่าจะเป็น</h1>
+    <div class="sub">Biostat สัปดาห์ที่ 2 · เครื่องมือฝึกด้วยตนเอง · ลากเส้นสีอำพันเพื่อขยับจุดตัด</div>
+  </header>
+
+  <div class="card">
+    <p class="lead">โจทย์ตั้งต้น: วิเคราะห์ปริมาณยาในแคปซูล มี <b>μ = 750</b>, <b>σ = 60</b> mg →
+      โอกาสได้แคปซูลที่มียา <b>มากกว่า 850.5 mg</b> เป็นเท่าใด? (ลาก/พิมพ์ค่าเพื่อสำรวจ)</p>
+
+    <!-- โหมดหาง -->
+    <div class="tabs">
+      <div class="tab" data-mode="lt">P(X &lt; a)</div>
+      <div class="tab active" data-mode="gt">P(X &gt; a)</div>
+      <div class="tab" data-mode="bw">P(a &lt; X &lt; b)</div>
+    </div>
+
+    <!-- แกน + เส้นอ้างอิง -->
+    <div class="optrow">
+      <div class="axis">
+        <span>ป้ายแกน:</span>
+        <button class="seg active" data-axis="mg">mg (x)</button>
+        <button class="seg" data-axis="z">Z</button>
+      </div>
+      <label class="chk"><input type="checkbox" id="ref"> เส้นอ้างอิง ±1σ, ±2σ (68–95%)</label>
+    </div>
+
+    <canvas id="cv" width="700" height="300"></canvas>
+
+    <div class="legend">
+      <span><i class="ln" style="border-color:var(--accent)"></i>เส้นโค้ง Normal</span>
+      <span><i style="background:var(--shade)"></i>พื้นที่แรเงา = ความน่าจะเป็น</span>
+      <span><i class="ln" style="border-color:var(--accent2)"></i>เส้นตัด (ลากได้)</span>
+      <span><i class="ln" style="border-color:var(--ink);border-top-style:dashed"></i>ค่าเฉลี่ย μ</span>
+    </div>
+
+    <div class="stats" id="stats"></div>
+
+    <div class="formula" id="excel"></div>
+
+    <div class="ztbl" id="ztable"></div>
+
+    <div class="ctrls">
+      <div class="nums">
+        <div class="fld"><label>μ</label><input id="mu" type="number" step="any" value="750"></div>
+        <div class="fld"><label>σ</label><input id="sd" type="number" step="any" min="0.0001" value="60"></div>
+        <div class="fld"><label>a</label><input id="a" type="number" step="any" value="850.5"></div>
+        <div class="fld" id="bfld"><label>b</label><input id="b" type="number" step="any" value="870"></div>
+      </div>
+      <div class="btns">
+        <button class="act" id="preset">โจทย์ 750 / 60 · a = 850.5</button>
+        <button class="act ghost" id="reset">รีเซ็ต μ=0, σ=1</button>
+      </div>
+    </div>
+
+    <p class="note">สิ่งที่ต้องสังเกต: (1) ตัวเลขที่ได้คือ <b>พื้นที่ใต้โค้ง</b> ของช่วงที่ถาม ไม่ใช่ความสูง ·
+      (2) กดสลับ <b>ป้ายแกน Z</b> จะเห็นว่า <b>โค้งเดิมเป๊ะ</b> เปลี่ยนแค่ตัวเลขบนแกน — Z คือ “ห่างค่าเฉลี่ยกี่ σ” ·
+      (3) Z = 1.96 ที่ครอบพื้นที่กลาง 95% คือเลขเดียวกับที่จะใช้ใน 95% CI และ test statistic สัปดาห์หน้า</p>
+  </div>
+
+  <p class="sub" style="text-align:center;margin-top:4px;">
+    ปรับธีม/ช่วงค่าได้ในส่วน &lt;style&gt; (ตัวแปร --accent ฯลฯ) · ไฟล์เดียวจบ ไม่ต้องต่อเน็ต ·
+    ค่าจาก widget = ค่าจากฟังก์ชัน Excel ที่แสดง
+  </p>
+</div>
+
+<script>
+/* polyfill เล็ก ๆ ให้รองรับเบราว์เซอร์เก่า/ฝังตัว (NodeList.forEach) */
+if(window.NodeList && !NodeList.prototype.forEach){ NodeList.prototype.forEach = Array.prototype.forEach; }
+/* ===================== ส่วนคำนวณ (ไม่ต้องแก้) ===================== */
+// ความหนาแน่น Normal
+function normPdf(x, mu, sd){ return Math.exp(-0.5*Math.pow((x-mu)/sd,2)) / (sd*Math.sqrt(2*Math.PI)); }
+// error function (Abramowitz & Stegun 7.1.26) — แม่นพอสำหรับการสอน (~1e-7)
+function erf(x){
+  const s = x<0 ? -1 : 1; x = Math.abs(x);
+  const t = 1/(1+0.3275911*x);
+  const y = 1 - (((((1.061405429*t - 1.453152027)*t) + 1.421413741)*t - 0.284496736)*t + 0.254829592)*t*Math.exp(-x*x);
+  return s*y;
+}
+// ฟังก์ชันการแจกแจงสะสม Normal: Φ((x−μ)/σ)
+function normCdf(x, mu, sd){ return 0.5*(1 + erf((x-mu)/(sd*Math.SQRT2))); }
+
+/* ===================== ตัวช่วยวาด ===================== */
+function getCSS(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+function setupCanvas(cv){
+  const ratio = window.devicePixelRatio || 1;
+  const cssW = cv.clientWidth || 700;
+  const cssH = parseInt(cv.getAttribute('height'));
+  cv.width = cssW*ratio; cv.height = cssH*ratio;
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(ratio,0,0,ratio,0,0);
+  return {ctx, W:cssW, H:cssH};
+}
+
+/* ===================== สถานะ ===================== */
+const S = { mu:750, sd:60, a:850.5, b:870, mode:'gt', axis:'mg', ref:false };
+const CV = document.getElementById('cv');
+const PAD = {L:10, R:10, T:16, B:30};
+
+function xMin(){ return S.mu - 4*S.sd; }
+function xMax(){ return S.mu + 4*S.sd; }
+function xToPx(x, plotW){ return PAD.L + (x - xMin())/(xMax()-xMin())*plotW; }
+function pxToX(px, plotW){ return xMin() + (px - PAD.L)/plotW*(xMax()-xMin()); }
+
+/* ===================== วาดกราฟ ===================== */
+function draw(){
+  const {ctx, W, H} = setupCanvas(CV);
+  ctx.clearRect(0,0,W,H);
+  const plotW = W-PAD.L-PAD.R, plotH = H-PAD.T-PAD.B;
+  const yB = PAD.T+plotH;
+  const peak = normPdf(S.mu, S.mu, S.sd);
+  const yOf = x => yB - (normPdf(x,S.mu,S.sd)/peak)*plotH*0.94;
+
+  // ---- พื้นที่แรเงา ----
+  let lo, hi;
+  if(S.mode==='lt'){ lo=xMin(); hi=S.a; }
+  else if(S.mode==='gt'){ lo=S.a; hi=xMax(); }
+  else { lo=Math.min(S.a,S.b); hi=Math.max(S.a,S.b); }
+  ctx.fillStyle = getCSS('--shade'); ctx.beginPath();
+  ctx.moveTo(xToPx(lo,plotW), yB);
+  for(let x=lo; x<=hi; x+=(hi-lo)/240){ ctx.lineTo(xToPx(x,plotW), yOf(x)); }
+  ctx.lineTo(xToPx(hi,plotW), yB); ctx.closePath(); ctx.fill();
+
+  // ---- เส้นอ้างอิง ±1σ, ±2σ พร้อมแถบคลุม (bracket) 68% / 95% ----
+  if(S.ref){
+    // เส้นประแนวตั้งที่ ±1σ, ±2σ (จากเส้นโค้งลงมาที่แกน)
+    ctx.strokeStyle = getCSS('--line'); ctx.setLineDash([3,3]); ctx.lineWidth=1;
+    for(const k of [-2,-1,1,2]){
+      const xx = xToPx(S.mu+k*S.sd, plotW);
+      ctx.beginPath(); ctx.moveTo(xx, yOf(S.mu+k*S.sd)); ctx.lineTo(xx, yB); ctx.stroke();
+    }
+    ctx.setLineDash([]);
+
+    // แถบคลุมแนวนอนพร้อมป้าย % — k = จำนวน σ ที่คลุมแต่ละข้าง
+    const acc = getCSS('--muted');
+    function spanBar(k, y, label){
+      const xL = xToPx(S.mu-k*S.sd, plotW), xR = xToPx(S.mu+k*S.sd, plotW);
+      ctx.strokeStyle = acc; ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(xL, y);   ctx.lineTo(xR, y);     // เส้นแนวนอน
+      ctx.moveTo(xL, y-5); ctx.lineTo(xL, y+5);   // ขีดปลายซ้าย
+      ctx.moveTo(xR, y-5); ctx.lineTo(xR, y+5);   // ขีดปลายขวา
+      ctx.stroke();
+      // ป้าย % บนพื้นครีมเล็ก ๆ ให้อ่านชัดเหนือเส้นโค้ง/พื้นที่แรเงา
+      ctx.font = '600 12px Mali,system-ui,sans-serif'; ctx.textAlign = 'center';
+      const w = ctx.measureText(label).width + 10, cx = (xL+xR)/2;
+      ctx.fillStyle = getCSS('--card'); ctx.fillRect(cx-w/2, y-8, w, 16);
+      ctx.fillStyle = acc; ctx.fillText(label, cx, y+4);
+    }
+    spanBar(1, yB - plotH*0.30, '68%');   // ช่วง ±1σ
+    spanBar(2, yB - plotH*0.13, '95%');   // ช่วง ±2σ
+  }
+
+  // ---- เส้นโค้ง Normal ----
+  ctx.strokeStyle = getCSS('--accent'); ctx.lineWidth=2.4; ctx.beginPath();
+  for(let px=0; px<=plotW; px+=1){
+    const x = pxToX(PAD.L+px, plotW);
+    const y = yOf(x);
+    px===0 ? ctx.moveTo(PAD.L+px,y) : ctx.lineTo(PAD.L+px,y);
+  }
+  ctx.stroke();
+
+  // ---- เส้นค่าเฉลี่ย μ ----
+  const mpx = xToPx(S.mu, plotW);
+  ctx.strokeStyle = getCSS('--ink'); ctx.setLineDash([4,3]); ctx.lineWidth=1; ctx.beginPath();
+  ctx.moveTo(mpx,PAD.T); ctx.lineTo(mpx,yB); ctx.stroke(); ctx.setLineDash([]);
+
+  // ---- เส้นตัดที่ลากได้ (a และ b) ----
+  drawCut(ctx, S.a, plotW, yB);
+  if(S.mode==='bw') drawCut(ctx, S.b, plotW, yB);
+
+  // ---- แกน x: tick ที่ μ + kσ เสมอ → สลับ label mg/Z = แค่เปลี่ยนตัวเลข ----
+  ctx.fillStyle = getCSS('--muted'); ctx.font='11px Mali,system-ui,sans-serif'; ctx.textAlign='center';
+  for(let k=-3;k<=3;k++){
+    const xv = S.mu+k*S.sd, xx = xToPx(xv, plotW);
+    const lab = S.axis==='mg' ? Math.round(xv).toString() : (k>0?'+':'')+k;
+    ctx.fillText(lab, xx, yB+15);
+  }
+  ctx.fillStyle = getCSS('--ink'); ctx.font='12px Mali,system-ui,sans-serif';
+  ctx.fillText(S.axis==='mg' ? 'ปริมาณยา (mg)' : 'Z = (x − μ) / σ', PAD.L+plotW/2, H-3);
+}
+
+function drawCut(ctx, val, plotW, yB){
+  const xx = xToPx(val, plotW);
+  ctx.strokeStyle = getCSS('--accent2'); ctx.lineWidth=2; ctx.beginPath();
+  ctx.moveTo(xx, PAD.T-2); ctx.lineTo(xx, yB); ctx.stroke();
+  // หมุดจับ (สามเหลี่ยม) ที่ฐาน
+  ctx.fillStyle = getCSS('--accent2'); ctx.beginPath();
+  ctx.moveTo(xx, yB-7); ctx.lineTo(xx-6, yB+1); ctx.lineTo(xx+6, yB+1); ctx.closePath(); ctx.fill();
+}
+
+/* ===================== อัปเดตตัวเลข + สูตร ===================== */
+function fmtP(p){ return p.toFixed(3); }
+function refresh(){
+  // sync ช่องตัวเลข
+  document.getElementById('mu').value = S.mu;
+  document.getElementById('sd').value = S.sd;
+  document.getElementById('a').value = round1(S.a);
+  document.getElementById('b').value = round1(S.b);
+  document.getElementById('bfld').classList.toggle('hidden', S.mode!=='bw');
+
+  const za = (S.a-S.mu)/S.sd, zb = (S.b-S.mu)/S.sd;
+  const pa = normCdf(S.a,S.mu,S.sd);   // Φ(za) = P(Z < za) = ค่าจากตาราง Z
+  const pb = normCdf(S.b,S.mu,S.sd);   // Φ(zb) = P(Z < zb)
+  let prob, pillsHTML, excelHTML;
+  const mu=S.mu, sd=S.sd, a=round1(S.a), b=round1(S.b);
+
+  if(S.mode==='lt'){
+    prob = pa;
+    pillsHTML = pill(za.toFixed(2),'Z ของ a = (a−μ)/σ')
+      + pill(fmtP(pa),'Φ(za) = P(Z < za)')
+      + pill(fmtP(prob),'P(X < a) = พื้นที่แรเงา')
+      + pill((prob*100).toFixed(1)+'%','ร้อยละ');
+    excelHTML = `=NORM.DIST(<b>${a}</b>, ${mu}, ${sd}, TRUE)  →  ${fmtP(prob)}\n`
+      + `=NORM.S.DIST(<b>${za.toFixed(2)}</b>, TRUE)        →  ${fmtP(prob)}`;
+  } else if(S.mode==='gt'){
+    prob = 1 - pa;
+    pillsHTML = pill(za.toFixed(2),'Z ของ a = (a−μ)/σ')
+      + pill(fmtP(pa),'Φ(za) = P(Z < za)')
+      + pill(fmtP(prob),'P(X > a) = 1 − Φ(za) = พื้นที่แรเงา')
+      + pill((prob*100).toFixed(1)+'%','ร้อยละ');
+    excelHTML = `=1 - NORM.DIST(<b>${a}</b>, ${mu}, ${sd}, TRUE)  →  ${fmtP(prob)}`;
+  } else {
+    prob = pb - pa;
+    pillsHTML = pill(za.toFixed(2),'Z ของ a')
+      + pill(zb.toFixed(2),'Z ของ b')
+      + pill(fmtP(pa),'Φ(za) = P(Z < za)')
+      + pill(fmtP(pb),'Φ(zb) = P(Z < zb)')
+      + pill(fmtP(prob),'P(a < X < b) = Φ(zb) − Φ(za)')
+      + pill((prob*100).toFixed(1)+'%','ร้อยละ');
+    excelHTML = `=NORM.DIST(<b>${b}</b>, ${mu}, ${sd}, TRUE) - NORM.DIST(<b>${a}</b>, ${mu}, ${sd}, TRUE)  →  ${fmtP(prob)}`;
+  }
+  document.getElementById('stats').innerHTML = pillsHTML;
+  document.getElementById('excel').innerHTML = excelHTML;
+  document.getElementById('ztable').innerHTML = ztableHTML();
+  draw();
+}
+function pill(v,l){ return `<div class="pill"><span class="v">${v}</span><span class="l">${l}</span></div>`; }
+function round1(x){ return Math.round(x*10)/10; }
+
+// กล่องค่าจากตาราง z — โชว์ทั้ง 3 แบบที่พบบ่อย เพื่อให้ตรงกับตารางที่นิสิตถืออยู่ ไม่ว่าเล่มไหน
+function zBlock(z, cum){
+  const mid = cum - 0.5, up = 1 - cum;
+  return `<div class="zrow"><span>แบบ 0 → z &nbsp;(mean-to-z)</span><b>${fmtP(mid)}</b></div>`
+       + `<div class="zrow"><span>แบบสะสม −∞ → z &nbsp;(NORM.DIST)</span><b>${fmtP(cum)}</b></div>`
+       + `<div class="zrow"><span>แบบหางบน z → +∞</span><b>${fmtP(up)}</b></div>`;
+}
+function ztableHTML(){
+  const za=(S.a-S.mu)/S.sd, zb=(S.b-S.mu)/S.sd;
+  const pa=normCdf(S.a,S.mu,S.sd), pb=normCdf(S.b,S.mu,S.sd);
+  let html;
+  if(S.mode==='bw'){
+    html = `<div class="h">ค่าจากตาราง z — แล้วแต่ชนิดตาราง</div>`
+         + `<div class="sub">ที่ z ของ a = ${za.toFixed(2)}</div>` + zBlock(za,pa)
+         + `<div class="sub">ที่ z ของ b = ${zb.toFixed(2)}</div>` + zBlock(zb,pb);
+  } else {
+    html = `<div class="h">ค่าจากตาราง z ที่ z = ${za.toFixed(2)} — แล้วแต่ชนิดตาราง</div>` + zBlock(za,pa);
+  }
+  const neg = (za<0) || (S.mode==='bw' && zb<0);
+  html += `<div class="foot">ตารางต่างเล่มพิมพ์คนละส่วน แต่เชื่อมกัน: สะสม = 0.5 + (0→z) · หาง = 0.5 − (0→z)`
+        + (neg ? ` &middot; ตาราง 0→z มักพิมพ์เฉพาะ z ≥ 0 — z ติดลบดูที่ |z| ด้วยความสมมาตร` : ``)
+        + `</div>`;
+  return html;
+}
+
+/* ===================== ลากเส้นตัดบน canvas ===================== */
+let dragging = null; // 'a' | 'b' | null
+function nearestHandle(px, plotW){
+  const da = Math.abs(px - xToPx(S.a, plotW));
+  if(S.mode!=='bw') return da<24 ? 'a' : null;
+  const db = Math.abs(px - xToPx(S.b, plotW));
+  if(Math.min(da,db) > 24) return null;
+  return da<=db ? 'a' : 'b';
+}
+function clientToPx(e){
+  const r = CV.getBoundingClientRect();
+  return e.clientX - r.left; // CSS px = พิกัดวาด (ตั้ง transform ด้วย ratio แล้ว)
+}
+function setFromPx(px){
+  const plotW = CV.clientWidth-PAD.L-PAD.R;
+  let x = pxToX(px, plotW);
+  x = Math.max(xMin(), Math.min(xMax(), x));
+  if(dragging==='a'){ S.a = (S.mode==='bw') ? Math.min(x, S.b) : x; }
+  else if(dragging==='b'){ S.b = Math.max(x, S.a); }
+  refresh();
+}
+CV.addEventListener('pointerdown', e=>{
+  const plotW = CV.clientWidth-PAD.L-PAD.R;
+  const px = clientToPx(e);
+  dragging = nearestHandle(px, plotW) || (S.mode==='bw' ? null : 'a');
+  if(dragging){ CV.setPointerCapture(e.pointerId); setFromPx(px); }
+});
+CV.addEventListener('pointermove', e=>{
+  if(dragging){ setFromPx(clientToPx(e)); return; }
+  // เปลี่ยนเคอร์เซอร์เมื่อเข้าใกล้หมุด
+  const plotW = CV.clientWidth-PAD.L-PAD.R;
+  CV.style.cursor = nearestHandle(clientToPx(e), plotW) ? 'ew-resize' : 'crosshair';
+});
+CV.addEventListener('pointerup', ()=>{ dragging=null; });
+CV.addEventListener('pointercancel', ()=>{ dragging=null; });
+
+/* ===================== ช่องตัวเลข + ปุ่ม ===================== */
+function readNum(id, fallback){ const v=parseFloat(document.getElementById(id).value); return isFinite(v)?v:fallback; }
+['mu','sd','a','b'].forEach(id=>{
+  document.getElementById(id).addEventListener('change', ()=>{
+    S.mu = readNum('mu', S.mu);
+    S.sd = Math.max(1e-4, readNum('sd', S.sd));
+    S.a  = Math.max(xMin(), Math.min(xMax(), readNum('a', S.a)));
+    S.b  = Math.max(xMin(), Math.min(xMax(), readNum('b', S.b)));
+    if(S.mode==='bw' && S.a>S.b){ const t=S.a; S.a=S.b; S.b=t; }
+    refresh();
+  });
+});
+document.getElementById('preset').addEventListener('click', ()=>{
+  S.mu=750; S.sd=60; S.a=850.5; S.b=870; setMode('gt'); refresh();
+});
+document.getElementById('reset').addEventListener('click', ()=>{
+  S.mu=0; S.sd=1; S.a=1.96; S.b=2.5; refresh();
+});
+
+/* ===================== โหมด + แกน + เส้นอ้างอิง ===================== */
+function setMode(m){
+  S.mode=m;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.mode===m));
+}
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click', ()=>{ setMode(t.dataset.mode); refresh(); });
+});
+document.querySelectorAll('.seg').forEach(s=>{
+  s.addEventListener('click', ()=>{
+    S.axis = s.dataset.axis;
+    document.querySelectorAll('.seg').forEach(x=>x.classList.toggle('active', x.dataset.axis===S.axis));
+    draw();
+  });
+});
+document.getElementById('ref').addEventListener('change', e=>{ S.ref=e.target.checked; draw(); });
+window.addEventListener('resize', draw);
+
+/* ===================== เริ่มต้น ===================== */
+refresh();
+/* วาดซ้ำเมื่อฟอนต์ Mali โหลดเสร็จ เพื่อให้ตัวอักษรในกราฟเป็นฟอนต์เดียวกับหน้าเว็บ */
+if(document.fonts && document.fonts.ready){ document.fonts.ready.then(draw); }
+</script>
+</body>
+</html>
