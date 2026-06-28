@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CLT explorer | Biostat Week 2</title>
+<style>
+  /* ====== โทนวินเทจหวาน (ใช้ร่วมกับรูปชุดใหม่) — ปรับได้ที่นี่ ====== */
+  :root{
+    --paper:#f4ecde; --card:#fbf6ec; --ink:#5a5246; --muted:#9a8f7d; --line:#d9cdb8;
+    --rose:#c98b86;     /* (1) ประชากร */
+    --sage:#8aa896;     /* (2) ข้อมูลดิบจากตัวอย่าง */
+    --sageDk:#5f7d6b;   /* เน้น/ปุ่ม/แท็บ active */
+    --blue:#8fa8bf;     /* (3) การแจกแจงของ x-bar */
+    --mustard:#cda75a;  /* เส้น mu */
+    --curve:#5a5246;    /* โค้งปกติบนกราฟ (3) */
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;padding:24px;background:var(--paper);color:var(--ink);
+    font-family:'Georgia','Times New Roman',serif;line-height:1.55;}
+  .wrap{max-width:760px;margin:0 auto;}
+  header{border-bottom:2px solid var(--ink);padding-bottom:12px;margin-bottom:18px;}
+  h1{font-size:1.3rem;margin:0 0 4px;}
+  .sub{color:var(--muted);font-size:.9rem;font-family:-apple-system,system-ui,sans-serif;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;
+    padding:18px;margin-bottom:14px;box-shadow:0 1px 3px rgba(90,82,70,.07);}
+  .lead{font-size:.97rem;margin:0 0 12px;}
+  .tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;font-family:-apple-system,system-ui,sans-serif;}
+  .tab{flex:1 1 0;min-width:96px;text-align:center;padding:9px 6px;border:1px solid var(--line);border-radius:8px;
+    background:var(--card);cursor:pointer;font-size:.86rem;color:var(--muted);user-select:none;}
+  .tab.active{border-color:var(--sageDk);color:var(--sageDk);font-weight:bold;background:#eef2ea;}
+  .panel{margin-bottom:8px;}
+  .plabel{font-family:-apple-system,system-ui,sans-serif;font-size:.83rem;color:var(--ink);font-weight:bold;margin:8px 0 1px;}
+  .plabel small{font-weight:normal;color:var(--muted);}
+  .plabel .dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:middle;}
+  canvas{width:100%;height:auto;display:block;}
+  .slid{font-family:-apple-system,system-ui,sans-serif;font-size:.9rem;margin:16px 0 4px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+  .slid input[type=range]{flex:1;min-width:180px;accent-color:var(--sageDk);}
+  .nval{font-weight:bold;color:var(--sageDk);min-width:96px;}
+  .npreset{display:flex;gap:6px;}
+  .npreset button{font-family:-apple-system,system-ui,sans-serif;font-size:.8rem;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:6px;padding:4px 10px;}
+  .stats{display:flex;gap:10px;flex-wrap:wrap;font-family:-apple-system,system-ui,sans-serif;margin-top:14px;}
+  .pill{flex:1;min-width:104px;text-align:center;border:1px solid var(--line);border-radius:8px;padding:9px 6px;background:var(--paper);}
+  .pill .v{font-size:1.12rem;font-weight:bold;display:block;color:var(--sageDk);font-variant-numeric:tabular-nums;}
+  .pill .l{font-size:.72rem;color:var(--muted);}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+  button.act{font-family:-apple-system,system-ui,sans-serif;font-size:.86rem;cursor:pointer;border:1px solid var(--sageDk);background:var(--sage);color:#fff;border-radius:8px;padding:9px 14px;}
+  .note{font-family:-apple-system,system-ui,sans-serif;font-size:.84rem;color:var(--muted);margin-top:12px;}
+  .mode3{display:flex;gap:6px;align-items:center;margin:8px 0 0;font-family:-apple-system,system-ui,sans-serif;font-size:.82rem;color:var(--muted);flex-wrap:wrap;}
+  .seg{cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:6px;padding:4px 11px;font-size:.8rem;font-family:inherit;}
+  .seg.active{border-color:var(--sageDk);color:var(--sageDk);background:#eef2ea;font-weight:bold;}
+  .acc-controls{display:flex;gap:6px;align-items:center;margin:8px 0 0;flex-wrap:wrap;font-family:-apple-system,system-ui,sans-serif;font-size:.82rem;}
+  .acc-controls button{cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:6px;padding:5px 11px;font-size:.8rem;font-family:inherit;}
+  #accCount{color:var(--sageDk);font-weight:bold;}
+  @media (max-width:600px){
+    body{padding:16px 12px;} .wrap{max-width:100%;}
+    h1{font-size:1.16rem;} .sub{font-size:.82rem;} .card{padding:14px;}
+    .tab{min-width:44%;font-size:.82rem;}
+    .pill{min-width:46%;}
+    .slid{font-size:.86rem;}
+    .slid input[type=range]{flex:1 1 100%;min-width:0;}
+    .nval{min-width:auto;}
+    .npreset{flex:1 1 100%;}
+    .npreset button{flex:1;}
+    button.act,#stepBtn,#playBtn,#clearBtn{flex:1 1 auto;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>CLT explorer — ประชากร · ข้อมูลดิบ · ค่าเฉลี่ย x&#772;</h1>
+    <div class="sub">Biostat สัปดาห์ที่ 2 · เลือกรูปประชากร แล้วลาก n ดูว่าอะไรเปลี่ยน อะไรไม่เปลี่ยน</div>
+  </header>
+  <div class="card">
+    <p class="lead">ทายก่อนลาก: เพิ่ม n แล้ว — กราฟ <b>(1)</b> ประชากร เปลี่ยนไหม? กราฟ <b>(2)</b> ข้อมูลดิบที่สุ่มได้ ล่ะ?
+      แล้วกราฟ <b>(3)</b> ค่าเฉลี่ย x&#772; ล่ะ?</p>
+    <div class="tabs">
+      <div class="tab active" data-pop="skew">เบ้ขวา (AUC)</div>
+      <div class="tab" data-pop="skewHi">เบ้ขวาจัดมาก</div>
+      <div class="tab" data-pop="unif">สม่ำเสมอ</div>
+      <div class="tab" data-pop="norm">ปกติ</div>
+      <div class="tab" data-pop="bimod">สองยอด</div>
+    </div>
+    <div class="panel">
+      <div class="plabel"><span class="dot" style="background:var(--rose)"></span>(1) ประชากร (Population)
+        <small>— การแจกแจง “จริง” ของทุกหน่วย · เข้าถึงไม่ได้ · ไม่ขึ้นกับ n</small></div>
+      <canvas id="popcv" width="700" height="135"></canvas>
+    </div>
+    <div class="panel">
+      <div class="plabel"><span class="dot" style="background:var(--sage)"></span>(2) ข้อมูลดิบจากตัวอย่าง (n ค่า)
+        <small>— เก็บได้จริงจากการทดลอง · รูปคล้าย (1) · <b>ตรวจ normality ที่นี่</b></small></div>
+      <canvas id="sampcv" width="700" height="135"></canvas>
+    </div>
+    <div class="panel">
+      <div class="plabel"><span class="dot" style="background:var(--blue)"></span>(3) การแจกแจงของ x&#772;
+        <small>— เฉลี่ยแต่ละตัวอย่าง (กลุ่มละ n) แล้วดูการกระจายของ “ค่าเฉลี่ย”</small></div>
+      <canvas id="sampmeancv" width="700" height="155"></canvas>
+      <div class="mode3"><span>โหมดกราฟ (3):</span>
+        <button class="seg active" data-m3="instant">เต็มทันที</button>
+        <button class="seg" data-m3="accumulate">สะสมทีละครั้ง</button></div>
+      <div class="acc-controls" id="accCtrl" style="display:none">
+        <button id="stepBtn">+ สุ่ม 1 ตัวอย่าง</button>
+        <button id="playBtn">▶ เล่นอัตโนมัติ</button>
+        <button id="clearBtn">ล้าง</button>
+        <span id="accCount">0 ตัวอย่าง</span></div>
+    </div>
+    <div class="slid">
+      <span>ขนาดตัวอย่างต่อกลุ่ม <b>n = <span class="nval" id="nval">1</span></b></span>
+      <input type="range" id="nslider" min="1" max="100" value="1">
+      <span class="npreset">
+        <button data-n="1">1</button><button data-n="5">5</button>
+        <button data-n="30">30</button><button data-n="100">100</button>
+      </span>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="btns"><button class="act" id="resample">สุ่มใหม่</button></div>
+    <p class="note">สังเกตเมื่อลาก n ขึ้น: <b>(1)</b> ประชากร <b>รูปเดิมเสมอ</b> · <b>(2)</b> ข้อมูลดิบที่สุ่มได้
+      ยัง<b>คล้ายประชากร (เบ้ตาม)</b> แค่ค่าเยอะขึ้น — เก็บเพิ่มไม่ทำให้หายเบ้ · <b>(3)</b> ค่าเฉลี่ย x&#772;
+      <b>เข้าใกล้ระฆัง + แคบลง</b> (SE = σ/√n) → นี่คือ CLT<br>
+      เราตรวจ normality ที่ <b>(2)</b> สิ่งที่เก็บได้ เพื่ออนุมานว่า <b>(3)</b> จะเป็นปกติไหม — ไม่ใช่ที่ (1) เข้าไม่ถึง และตรวจ (3) ตรง ๆ ไม่ได้ มีค่าเดียวต่อกลุ่ม<br>
+      <b style="color:var(--rose)">ลองแท็บ “เบ้ขวาจัดมาก” ที่ n = 30:</b> กราฟ (3) ยังเห็น<b>หางขวายาว</b> และค่า <b>Skewness ยังสูง</b> (แดง) — เบ้ขนาดนี้ n = 30 ยังไม่พอ ต้องใช้ n มากกว่านี้ · เทียบกับ “เบ้ขวา (AUC)” ที่ n = 30 ค่า Skewness ลงต่ำจนเข้าโค้งปกติแล้ว<br>
+      เคล็ด: <b>ดูค่า Skewness ประกอบเสมอ</b> — บางทีตาดูเหมือนปกติแต่ตัวเลขยังเบ้อยู่ (อย่าเชื่อสายตาอย่างเดียว)<br>
+      <b style="color:var(--sageDk)">โหมด “สะสมทีละครั้ง”:</b> กด “+ สุ่ม 1 ตัวอย่าง” จะเห็น n จุดดิบของรอบนั้น เฉลี่ยได้ x̄ 1 ค่า แล้วหยอดลงเป็น 1 แท่ง — ทำซ้ำ ๆ histogram จะค่อย ๆ ก่อตัวเป็นการแจกแจงของ x̄</p>
+  </div>
+  <p class="sub" style="text-align:center;">ปรับธีม/ช่วงค่าได้ในส่วน &lt;style&gt; · ไฟล์เดียวจบ ไม่ต้องต่อเน็ต</p>
+</div>
+<script>
+if(window.NodeList && !NodeList.prototype.forEach){ NodeList.prototype.forEach = Array.prototype.forEach; }
+function randn(){ var u=0,v=0; while(u===0)u=Math.random(); while(v===0)v=Math.random();
+  return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); }
+function drawFrom(pop){
+  if(pop==='skew')  return Math.exp(4.40 + 0.55*randn());
+  if(pop==='skewHi') return Math.exp(4.40 + 1.50*randn());
+  if(pop==='unif')  return 20 + 160*Math.random();
+  if(pop==='norm')  return 100 + 25*randn();
+  return (Math.random()<0.5 ? 60 : 140) + 12*randn();
+}
+function popDensity(pop,x){
+  if(pop==='skew'){ if(x<=0)return 0; return Math.exp(-0.5*Math.pow((Math.log(x)-4.40)/0.55,2))/(x*0.55*Math.sqrt(2*Math.PI)); }
+  if(pop==='skewHi'){ if(x<=0)return 0; return Math.exp(-0.5*Math.pow((Math.log(x)-4.40)/1.50,2))/(x*1.50*Math.sqrt(2*Math.PI)); }
+  if(pop==='unif'){ return (x>=20&&x<=180)? 1/160 : 0; }
+  if(pop==='norm'){ return Math.exp(-0.5*Math.pow((x-100)/25,2))/(25*Math.sqrt(2*Math.PI)); }
+  var a=Math.exp(-0.5*Math.pow((x-60)/12,2))/(12*Math.sqrt(2*Math.PI));
+  var b=Math.exp(-0.5*Math.pow((x-140)/12,2))/(12*Math.sqrt(2*Math.PI));
+  return 0.5*a+0.5*b;
+}
+var S={ pop:'skew', n:1, reps:1500 };
+var POP={};
+function computePopulation(){ var N=30000,arr=new Array(N),s=0,ss=0,i,x; for(i=0;i<N;i++){ x=drawFrom(S.pop); arr[i]=x; s+=x; ss+=x*x; }
+  POP.mu=s/N; POP.sigma=Math.sqrt(ss/N-POP.mu*POP.mu);
+  arr.sort(function(a,b){return a-b;});
+  var p=function(q){ return arr[Math.max(0,Math.min(N-1,Math.floor(q*N)))]; };
+  POP.xLo=Math.max(0, Math.min(POP.mu-3*POP.sigma, p(0.005)));
+  POP.xHi=Math.min(POP.mu+3.5*POP.sigma, p(0.96)); }
+function oneSample(){ var a=new Array(S.n); for(var i=0;i<S.n;i++) a[i]=drawFrom(S.pop); return a; }
+function samplingMeans(){ var m=new Array(S.reps); for(var r=0;r<S.reps;r++){ var t=0; for(var k=0;k<S.n;k++) t+=drawFrom(S.pop); m[r]=t/S.n; } return m; }
+function getCSS(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+function setup(cv){ var r=window.devicePixelRatio||1,W=cv.clientWidth||700,H=parseInt(cv.getAttribute('height'));
+  cv.width=W*r; cv.height=H*r; var c=cv.getContext('2d'); c.setTransform(r,0,0,r,0,0); return {ctx:c,W:W,H:H}; }
+var PADX=6, PADB=20;
+function xAxis(ctx,W,yB){ ctx.strokeStyle=getCSS('--ink'); ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(PADX,yB); ctx.lineTo(W-PADX,yB); ctx.stroke();
+  ctx.fillStyle=getCSS('--muted'); ctx.font='10px -apple-system,system-ui,sans-serif'; ctx.textAlign='center';
+  for(var t=0;t<=4;t++){ var xv=POP.xLo+(t/4)*(POP.xHi-POP.xLo); var xp=PADX+(xv-POP.xLo)/(POP.xHi-POP.xLo)*(W-2*PADX); ctx.fillText(Math.round(xv),xp,yB+13); } }
+function muLine(ctx,W,yB,mu){ var xp=PADX+(mu-POP.xLo)/(POP.xHi-POP.xLo)*(W-2*PADX);
+  ctx.strokeStyle=getCSS('--mustard'); ctx.lineWidth=1.5; ctx.setLineDash([4,3]); ctx.beginPath(); ctx.moveTo(xp,4); ctx.lineTo(xp,yB); ctx.stroke(); ctx.setLineDash([]); }
+function histify(data,bins,density){ var lo=POP.xLo,hi=POP.xHi,w=(hi-lo)/bins,c=new Array(bins),i;
+  for(i=0;i<bins;i++)c[i]=0; for(i=0;i<data.length;i++){ var x=data[i]; if(x<lo||x>=hi)continue; c[Math.floor((x-lo)/w)]++; }
+  if(density) for(i=0;i<bins;i++) c[i]=c[i]/(data.length*w); return {c:c,w:w}; }
+function drawPop(cv){ var s=setup(cv),ctx=s.ctx,W=s.W,H=s.H; ctx.clearRect(0,0,W,H);
+  var plotW=W-2*PADX,yB=H-PADB,plotH=yB-4,N=240,xs=[],ys=[],ymax=0,i;
+  for(i=0;i<=N;i++){ var xv=POP.xLo+(i/N)*(POP.xHi-POP.xLo),d=popDensity(S.pop,xv); xs.push(xv); ys.push(d); if(d>ymax)ymax=d; }
+  if(ymax<=0)ymax=1;
+  var X=function(xv){return PADX+(xv-POP.xLo)/(POP.xHi-POP.xLo)*plotW;}, Y=function(d){return yB-(d/ymax)*plotH;};
+  ctx.beginPath(); ctx.moveTo(X(xs[0]),yB); for(i=0;i<=N;i++) ctx.lineTo(X(xs[i]),Y(ys[i])); ctx.lineTo(X(xs[N]),yB); ctx.closePath();
+  ctx.fillStyle=getCSS('--rose'); ctx.globalAlpha=0.35; ctx.fill(); ctx.globalAlpha=1;
+  ctx.beginPath(); for(i=0;i<=N;i++){ i===0?ctx.moveTo(X(xs[i]),Y(ys[i])):ctx.lineTo(X(xs[i]),Y(ys[i])); }
+  ctx.strokeStyle=getCSS('--rose'); ctx.lineWidth=2.3; ctx.stroke();
+  muLine(ctx,W,yB,POP.mu); xAxis(ctx,W,yB); }
+function drawSample(cv,data){ var s=setup(cv),ctx=s.ctx,W=s.W,H=s.H; ctx.clearRect(0,0,W,H);
+  var plotW=W-2*PADX,yB=H-PADB,plotH=yB-4,bins=24,h=histify(data,bins,false),mx=0,i;
+  for(i=0;i<bins;i++) if(h.c[i]>mx)mx=h.c[i]; if(mx<=0)mx=1;
+  ctx.fillStyle=getCSS('--sage'); var bw=plotW/bins;
+  for(i=0;i<bins;i++){ var bh=(h.c[i]/mx)*plotH; if(bh>0) ctx.fillRect(PADX+i*bw+0.5,yB-bh,bw-1,bh); }
+  muLine(ctx,W,yB,POP.mu); xAxis(ctx,W,yB);
+  ctx.fillStyle=getCSS('--muted'); ctx.font='10px -apple-system,system-ui,sans-serif'; ctx.textAlign='right'; ctx.fillText('n = '+S.n+' ค่า', W-PADX-2, 12); }
+function statsOf(arr){ var N=arr.length; if(N<1) return {mean:0,sd:0,skew:0,n:0};
+  var s=0,ss=0,sss=0,i; for(i=0;i<N;i++){ var m=arr[i]; s+=m; ss+=m*m; sss+=m*m*m; }
+  var mean=s/N, vr=ss/N-mean*mean, sd=Math.sqrt(vr>0?vr:0);
+  var skew=sd>0?((sss/N)-3*mean*(ss/N)+2*mean*mean*mean)/Math.pow(sd,3):0;
+  return {mean:mean,sd:sd,skew:skew,n:N}; }
+function drawMeansInstant(cv,means,se){ var s=setup(cv),ctx=s.ctx,W=s.W,H=s.H; ctx.clearRect(0,0,W,H);
+  var plotW=W-2*PADX,yB=H-PADB,plotH=yB-4,bins=28,h=histify(means,bins,true),ymax=0,i;
+  for(i=0;i<bins;i++) if(h.c[i]>ymax)ymax=h.c[i];
+  var pk=1/(se*Math.sqrt(2*Math.PI)); if(pk>ymax)ymax=pk; if(ymax<=0)ymax=1;
+  ctx.fillStyle=getCSS('--blue'); var bw=plotW/bins;
+  for(i=0;i<bins;i++){ var bh=(h.c[i]/ymax)*plotH; if(bh>0) ctx.fillRect(PADX+i*bw+0.5,yB-bh,bw-1,bh); }
+  ctx.strokeStyle=getCSS('--curve'); ctx.lineWidth=2.0; ctx.beginPath();
+  for(var px=0;px<=plotW;px++){ var xv=POP.xLo+(px/plotW)*(POP.xHi-POP.xLo);
+    var d=Math.exp(-0.5*Math.pow((xv-POP.mu)/se,2))/(se*Math.sqrt(2*Math.PI)); var Y=yB-(d/ymax)*plotH;
+    px===0?ctx.moveTo(PADX+px,Y):ctx.lineTo(PADX+px,Y); } ctx.stroke();
+  muLine(ctx,W,yB,POP.mu); xAxis(ctx,W,yB); }
+function drawMeansAccum(cv,acc,last,se){ var s=setup(cv),ctx=s.ctx,W=s.W,H=s.H; ctx.clearRect(0,0,W,H);
+  var plotW=W-2*PADX,yB=H-PADB,plotH=yB-4,bins=28,i;
+  var X=function(xv){return PADX+(xv-POP.xLo)/(POP.xHi-POP.xLo)*plotW;};
+  var h=histify(acc,bins,false),mx=0; for(i=0;i<bins;i++) if(h.c[i]>mx)mx=h.c[i];
+  var peak=acc.length>0 ? acc.length*h.w/(se*Math.sqrt(2*Math.PI)) : 0;
+  var ymax=Math.max(mx,peak,1), bw=plotW/bins;
+  ctx.fillStyle=getCSS('--blue');
+  for(i=0;i<bins;i++){ var bh=(h.c[i]/ymax)*plotH; if(bh>0) ctx.fillRect(PADX+i*bw+0.5,yB-bh,bw-1,bh); }
+  if(acc.length>0){ ctx.strokeStyle=getCSS('--curve'); ctx.lineWidth=1.6; ctx.globalAlpha=0.5; ctx.beginPath();
+    for(var px=0;px<=plotW;px++){ var xv=POP.xLo+(px/plotW)*(POP.xHi-POP.xLo);
+      var cnt=acc.length*h.w*Math.exp(-0.5*Math.pow((xv-POP.mu)/se,2))/(se*Math.sqrt(2*Math.PI));
+      var Y=yB-(cnt/ymax)*plotH; px===0?ctx.moveTo(PADX+px,Y):ctx.lineTo(PADX+px,Y); } ctx.stroke(); ctx.globalAlpha=1; }
+  muLine(ctx,W,yB,POP.mu); xAxis(ctx,W,yB);
+  if(last){
+    ctx.fillStyle=getCSS('--sage');
+    for(i=0;i<last.sample.length;i++){ var xv2=last.sample[i]; if(xv2<POP.xLo||xv2>POP.xHi)continue;
+      var jx=X(xv2), jy=yB-7-(i%3)*3.2; ctx.beginPath(); ctx.arc(jx,jy,2.3,0,2*Math.PI); ctx.fill(); }
+    var mxp=X(last.mean); ctx.strokeStyle=getCSS('--sageDk'); ctx.lineWidth=2; ctx.setLineDash([3,2]);
+    ctx.beginPath(); ctx.moveTo(mxp,16); ctx.lineTo(mxp,yB); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle=getCSS('--sageDk'); ctx.font='bold 11px -apple-system,system-ui,sans-serif'; ctx.textAlign='center'; ctx.fillText('x\u0304 รอบนี้', mxp, 12);
+  } else { ctx.fillStyle=getCSS('--muted'); ctx.font='12px -apple-system,system-ui,sans-serif'; ctx.textAlign='center';
+    ctx.fillText('กด “+ สุ่ม 1 ตัวอย่าง” เพื่อเริ่มสะสม', W/2, yB/2); } }
+var POP_CV=document.getElementById('popcv'), SAMP_CV=document.getElementById('sampcv'), MEAN_CV=document.getElementById('sampmeancv');
+S.meanMode='instant';
+var fullMeans=null, ACC=[], LAST=null, panel2Sample=[], autoTimer=null;
+
+function drawPanel3(){ var se=POP.sigma/Math.sqrt(S.n);
+  if(S.meanMode==='instant'){ if(!fullMeans) fullMeans=samplingMeans(); drawMeansInstant(MEAN_CV, fullMeans, se); }
+  else { drawMeansAccum(MEAN_CV, ACC, LAST, se); } }
+
+function updateStats(){ var se=POP.sigma/Math.sqrt(S.n);
+  var arr=(S.meanMode==='instant')?(fullMeans||[]):ACC; var st=statsOf(arr); var enough=st.n>=5;
+  var sdTxt=enough?st.sd.toFixed(1):'—', skTxt=enough?st.skew.toFixed(2):'—';
+  var skCol=enough?(Math.abs(st.skew)>1?getCSS('--rose'):(Math.abs(st.skew)>0.5?getCSS('--mustard'):getCSS('--sageDk'))):getCSS('--muted');
+  document.getElementById('stats').innerHTML=
+      pill(POP.mu.toFixed(1),'μ ค่าเฉลี่ยประชากร')+pill(POP.sigma.toFixed(1),'σ SD ประชากร')
+    + pill(String(S.n),'n ต่อกลุ่ม')+pill(se.toFixed(1),'SE = σ/√n')+pill(sdTxt,'SD ของ x\u0304 (จำลอง)')
+    + pillC(skTxt,'Skewness',skCol); }
+
+function updateAccCount(){ var e=document.getElementById('accCount'); if(e) e.textContent=ACC.length+' ตัวอย่าง'; }
+function pill(v,l){ return '<div class="pill"><span class="v">'+v+'</span><span class="l">'+l+'</span></div>'; }
+function pillC(v,l,col){ return '<div class="pill"><span class="v" style="color:'+col+'">'+v+'</span><span class="l">'+l+'</span></div>'; }
+
+function stepAccum(){ var sample=oneSample(); var m=statsOf(sample).mean;
+  ACC.push(m); LAST={sample:sample,mean:m}; panel2Sample=sample;
+  drawSample(SAMP_CV, sample); drawPanel3(); updateStats(); updateAccCount(); }
+function stopAuto(){ if(autoTimer){ clearInterval(autoTimer); autoTimer=null; } var pb=document.getElementById('playBtn'); if(pb) pb.textContent='▶ เล่นอัตโนมัติ'; }
+function toggleAuto(){ if(autoTimer){ stopAuto(); return; }
+  var pb=document.getElementById('playBtn'); if(pb) pb.textContent='⏸ หยุด';
+  autoTimer=setInterval(function(){ if(ACC.length>=500){ stopAuto(); return; } stepAccum(); }, 150); }
+function clearAcc(){ stopAuto(); ACC=[]; LAST=null; drawPanel3(); updateStats(); updateAccCount(); }
+function setMode(m){ stopAuto(); S.meanMode=m;
+  document.querySelectorAll('.seg').forEach(function(b){ b.classList.toggle('active', b.dataset.m3===m); });
+  document.getElementById('accCtrl').style.display=(m==='accumulate')?'flex':'none';
+  drawPanel3(); updateStats(); }
+
+function refresh(){ document.getElementById('nval').textContent=S.n;
+  stopAuto(); fullMeans=null; ACC=[]; LAST=null;
+  drawPop(POP_CV); panel2Sample=oneSample(); drawSample(SAMP_CV, panel2Sample);
+  drawPanel3(); updateStats(); updateAccCount(); }
+
+document.querySelectorAll('.tab').forEach(function(t){ t.addEventListener('click',function(){
+  S.pop=t.dataset.pop; document.querySelectorAll('.tab').forEach(function(x){x.classList.toggle('active',x.dataset.pop===S.pop);});
+  computePopulation(); refresh(); }); });
+document.getElementById('nslider').addEventListener('input',function(e){ S.n=parseInt(e.target.value); refresh(); });
+document.querySelectorAll('.npreset button').forEach(function(b){ b.addEventListener('click',function(){
+  S.n=parseInt(b.dataset.n); document.getElementById('nslider').value=S.n; refresh(); }); });
+document.getElementById('resample').addEventListener('click',function(){
+  if(S.meanMode==='accumulate'){ stepAccum(); }
+  else { fullMeans=null; panel2Sample=oneSample(); drawSample(SAMP_CV, panel2Sample); drawPanel3(); updateStats(); } });
+document.querySelectorAll('.seg').forEach(function(b){ b.addEventListener('click',function(){ setMode(b.dataset.m3); }); });
+document.getElementById('stepBtn').addEventListener('click',stepAccum);
+document.getElementById('playBtn').addEventListener('click',toggleAuto);
+document.getElementById('clearBtn').addEventListener('click',clearAcc);
+window.addEventListener('resize',function(){ drawPop(POP_CV); drawSample(SAMP_CV, panel2Sample); drawPanel3(); });
+computePopulation(); refresh();
+</script>
+</body>
+</html>
