@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Widget · z-area — หาพื้นที่ใต้โค้งปกติ | Biostat WK02</title>
+<style>
+  :root{
+    --paper:#f4ecde; --card:#fbf5ea; --ink:#3a3330; --ink2:#6b5f57; --muted:#8a8276;
+    --sage:#5e9c7e; --sagef:#e6eee8; --rose:#c0695f; --rosef:#f1d9d2;
+    --mustard:#cda75a; --mustf:#f3e9d2; --mustd:#9a7320; --blue:#4a6fa5; --bluef:#e1e8f0; --line:#d9cdb8;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:Georgia,"Garamond","Times New Roman",serif;line-height:1.5;padding:24px 16px;display:flex;justify-content:center}
+  .wrap{width:100%;max-width:680px}
+  h1{font-size:23px;margin:0 0 4px}
+  .sub{color:var(--ink2);font-size:14px;margin:0 0 16px;font-style:italic}
+  .bar{display:flex;justify-content:space-between;align-items:center;font-size:14px;color:var(--ink2);margin-bottom:12px}
+  .score b{color:var(--sage)}
+  .card{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:20px 22px;margin-bottom:14px}
+  .tag{display:inline-block;font-size:12.5px;font-weight:bold;padding:3px 12px;border-radius:20px;margin-bottom:10px;background:var(--bluef);color:var(--blue)}
+  .curvebox{background:#fffdf8;border:1px solid var(--line);border-radius:10px;padding:6px 8px 2px;margin-bottom:12px}
+  .curvebox svg{width:100%;height:auto;display:block}
+  .ccap{font-size:12.5px;color:var(--ink2);text-align:center;margin:2px 0 4px}
+  .scenario{font-size:15.5px;margin:0 0 10px}
+  .givens{display:flex;flex-wrap:wrap;font-size:15px;margin-bottom:6px}
+  .givens span{margin-right:18px} .givens span b{color:var(--ink)}
+  .ask{font-size:16px;font-weight:bold;margin:12px 0 8px}
+  .inrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  input[type=number]{font-family:inherit;font-size:17px;width:110px;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;background:#fff;color:var(--ink)}
+  input:focus{outline:none;border-color:var(--mustard)}
+  button{font-family:inherit;font-size:15px;padding:9px 18px;border-radius:9px;cursor:pointer;border:1.5px solid var(--ink2);background:transparent;color:var(--ink);transition:.15s}
+  button:hover{background:#efe6d4} button:disabled{opacity:.5;cursor:default}
+  button.primary{background:var(--sage);border-color:var(--sage);color:#fff} button.primary:hover{background:#4f8a6e}
+  button.ghost{border-color:var(--mustard);color:var(--mustd)} button.ghost:hover{background:var(--mustf)}
+  .fb{margin-top:14px;font-size:15px;padding:12px 16px;border-radius:10px;display:none}
+  .fb.ok{display:block;background:var(--sagef);border:1.5px solid var(--sage)}
+  .fb.no{display:block;background:var(--rosef);border:1.5px solid var(--rose)}
+  .fb.ok b{color:var(--sage)} .fb.no b{color:var(--rose)}
+  .hints{margin-top:12px}
+  .hint{background:var(--mustf);border-left:4px solid var(--mustard);border-radius:0 8px 8px 0;padding:9px 14px;margin-bottom:8px;font-size:14.5px}
+  .hint code{font-family:"Courier New",monospace;background:#fff;padding:1px 5px;border-radius:4px}
+  .ex{display:block;margin-top:4px;font-family:"Courier New",monospace;font-size:13px;color:var(--blue)}
+  .ex b{color:var(--blue)}
+  .sol{background:var(--sagef);border-left:4px solid var(--sage);border-radius:0 8px 8px 0;padding:10px 14px;margin-top:10px;font-size:15px}
+  .actions{margin-top:16px;display:flex;gap:10px;flex-wrap:wrap}
+  .done{text-align:center;padding:30px} .done .big{font-size:40px;color:var(--sage);margin:6px 0}
+  .foot{font-size:12.5px;color:var(--muted);text-align:center;margin-top:18px}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>z-area — หาพื้นที่ใต้โค้งปกติ</h1>
+  <p class="sub">Widget · Week 1 · ดูพื้นที่ระบายสี → แปลงเป็น z → หาความน่าจะเป็น (มีสูตร Excel ในคำใบ้)</p>
+  <div class="bar">
+    <span class="prog" id="prog">ข้อ 1 / 5</span>
+    <span class="score">คะแนน: <b id="score">0</b> / 5 &nbsp;·&nbsp; ใบ้ที่ใช้: <span id="hused">0</span></span>
+  </div>
+  <div id="quiz"><div class="card" id="qcard"></div></div>
+  <div id="endcard" class="hidden">
+    <div class="card done"><div>เสร็จแล้ว!</div><div class="big" id="final">0 / 5</div>
+      <div id="endmsg" style="color:var(--ink2)"></div>
+      <div style="margin-top:18px"><button class="primary" onclick="restart()">เริ่มใหม่</button></div></div>
+  </div>
+  <p class="foot">z = (x − μ)/σ → พื้นที่ทางซ้าย =NORM.S.DIST(z,TRUE) หรือ =NORM.DIST(x,μ,σ,TRUE)</p>
+</div>
+
+<script>
+const problems=[
+ {id:1,unit:"น้ำหนักเม็ดยา (mg)",ctx:"น้ำหนักเม็ดยาแจกแจงปกติ",mu:500,sigma:10,type:"left",x:480,z:-2.00,aL:2.28,ans:2.28,tol:0.5,
+  q:"P(X < 480) — สัดส่วนเม็ดยาที่เบากว่า 480 mg"},
+ {id:2,unit:"SBP (mmHg)",ctx:"ความดันซิสโตลิกแจกแจงปกติ",mu:120,sigma:12,type:"right",x:138,z:1.50,aL:93.32,ans:6.68,tol:0.5,
+  q:"P(X > 138) — สัดส่วนผู้ที่ความดันสูงกว่า 138"},
+ {id:3,unit:"น้ำตาลในเลือด (mg/dL)",ctx:"ระดับน้ำตาลในเลือดแจกแจงปกติ",mu:100,sigma:10,type:"between",xlo:85,xhi:115,zlo:-1.50,zhi:1.50,aLo:6.68,aHi:93.32,ans:86.64,tol:0.6,
+  q:"P(85 < X < 115) — สัดส่วนที่อยู่ในช่วง 85–115"},
+ {id:4,unit:"ปริมาณตัวยาต่อขวด (mg)",ctx:"ปริมาณตัวยาต่อขวดแจกแจงปกติ",mu:750,sigma:60,type:"left",x:660,z:-1.50,aL:6.68,ans:6.68,tol:0.5,
+  q:"P(X < 660) — สัดส่วนขวดที่มีตัวยาน้อยกว่า 660 mg"},
+ {id:5,unit:"% การละลาย",ctx:"เปอร์เซ็นต์การละลายแจกแจงปกติ",mu:80,sigma:4,type:"left",x:89,z:2.25,aL:98.78,ans:98.78,tol:0.5,
+  q:"P(X < 89) — สัดส่วนตัวอย่างที่ละลายน้อยกว่า 89%"},
+];
+
+let idx=0, score=0, hintsUsed=0, hintLevel=0, solved=false;
+
+function curveSVG(p){
+  const zmin=-3.6,zmax=3.6,X0=42,X1=558,baseY=128,H=92;
+  const xz=z=>X0+(z-zmin)/(zmax-zmin)*(X1-X0);
+  const yz=z=>baseY-H*Math.exp(-z*z/2);
+  let cp="M";
+  for(let i=0;i<=160;i++){const z=zmin+(zmax-zmin)*i/160;cp+=(i?" L":"")+xz(z).toFixed(1)+","+yz(z).toFixed(1);}
+  let za,zb;
+  if(p.type==="left"){za=zmin;zb=p.z;} else if(p.type==="right"){za=p.z;zb=zmax;} else {za=p.zlo;zb=p.zhi;}
+  let sp="M"+xz(za).toFixed(1)+","+baseY;
+  for(let i=0;i<=120;i++){const z=za+(zb-za)*i/120;sp+=" L"+xz(z).toFixed(1)+","+yz(z).toFixed(1);}
+  sp+=" L"+xz(zb).toFixed(1)+","+baseY+" Z";
+  let cuts="";
+  const vline=(z,val)=>`<line x1="${xz(z).toFixed(1)}" y1="${yz(z).toFixed(1)}" x2="${xz(z).toFixed(1)}" y2="${baseY}" stroke="#c0695f" stroke-width="2"/>`
+    +`<text x="${xz(z).toFixed(1)}" y="${baseY+16}" text-anchor="middle" font-size="13" fill="#c0695f" font-weight="bold">${val}</text>`;
+  if(p.type==="between"){cuts=vline(p.zlo,p.xlo)+vline(p.zhi,p.xhi);} else {cuts=vline(p.z,p.x);}
+  return `<svg viewBox="0 0 600 152" xmlns="http://www.w3.org/2000/svg" font-family="Georgia,serif">
+    <line x1="30" y1="${baseY}" x2="570" y2="${baseY}" stroke="#d9cdb8" stroke-width="1.5"/>
+    <path d="${sp}" fill="#8aa896" fill-opacity="0.55" stroke="none"/>
+    <path d="${cp}" fill="none" stroke="#3a3330" stroke-width="2"/>
+    <line x1="${xz(0)}" y1="${(baseY-H).toFixed(1)}" x2="${xz(0)}" y2="${baseY}" stroke="#6b5f57" stroke-width="1.3" stroke-dasharray="4,4"/>
+    <text x="${xz(0)}" y="${baseY+16}" text-anchor="middle" font-size="13" fill="#6b5f57">μ=${p.mu}</text>
+    ${cuts}
+  </svg>`;
+}
+
+function excelArea(p){
+  if(p.type==="between")
+    return `<span class="ex">Excel: <b>=NORM.DIST(${p.xhi},${p.mu},${p.sigma},TRUE)</b> &nbsp;และ&nbsp; <b>=NORM.DIST(${p.xlo},${p.mu},${p.sigma},TRUE)</b></span>`;
+  return `<span class="ex">Excel: <b>=NORM.S.DIST(${p.z},TRUE)</b> หรือ <b>=NORM.DIST(${p.x},${p.mu},${p.sigma},TRUE)</b></span>`;
+}
+
+function render(){
+  const p=problems[idx];
+  document.getElementById('prog').textContent="ข้อ "+(idx+1)+" / "+problems.length;
+  hintLevel=0; solved=false;
+  document.getElementById('qcard').innerHTML=`
+    <span class="tag">แจกแจงปกติ · หาพื้นที่</span>
+    <div class="curvebox">${curveSVG(p)}<p class="ccap">พื้นที่ระบายสีเขียว = ความน่าจะเป็นที่โจทย์ถาม</p></div>
+    <p class="scenario">${p.ctx}</p>
+    <div class="givens"><span>${p.unit}</span><span>μ = <b>${p.mu}</b></span><span>σ = <b>${p.sigma}</b></span></div>
+    <p class="ask">${p.q}  =  ? %</p>
+    <div class="inrow">
+      <span>ความน่าจะเป็น =</span>
+      <input type="number" id="ans" step="0.01" placeholder="?" autocomplete="off"><span>%</span>
+      <button class="primary" id="checkbtn" onclick="check()">ตรวจคำตอบ</button>
+      <button class="ghost" id="hintbtn" onclick="hint()">ขอคำใบ้</button>
+    </div>
+    <div class="fb" id="fb"></div><div class="hints" id="hints"></div><div class="actions" id="actions"></div>`;
+  const inp=document.getElementById('ans'); inp.focus();
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter')check();});
+}
+
+function check(){
+  if(solved) return;
+  const p=problems[idx]; const fb=document.getElementById('fb');
+  const v=parseFloat(document.getElementById('ans').value);
+  if(isNaN(v)){fb.className='fb no';fb.innerHTML='ลองใส่ตัวเลข (เป็น %) ก่อนนะ';return;}
+  if(Math.abs(v-p.ans)<=p.tol){
+    solved=true; if(hintLevel===0) score++;
+    fb.className='fb ok';
+    fb.innerHTML=`<b>ถูกต้อง!</b> ความน่าจะเป็น &asymp; <b>${p.ans}%</b>`
+      +(hintLevel>0?' <span style="color:var(--ink2)">(ใช้คำใบ้ ข้อนี้ไม่นับคะแนน)</span>':'');
+    document.getElementById('score').textContent=score;
+    document.getElementById('checkbtn').disabled=true; document.getElementById('hintbtn').disabled=true;
+    showNext();
+  } else {
+    fb.className='fb no';
+    const near=Math.abs(v-p.ans)<8;
+    let extra='';
+    if(Math.abs(v-(100-p.ans))<=p.tol) extra=' (ดูเหมือนหาพื้นที่กลับด้าน — เช็กทิศ < หรือ >)';
+    fb.innerHTML='<b>ยังไม่ใช่.</b> '+(extra||(near?'ใกล้แล้ว — เช็กการอ่านตาราง z':'ลองดูคำใบ้'))
+      +' &nbsp;<button class="ghost" onclick="hint()">ขอคำใบ้</button>';
+  }
+}
+
+function hint(){
+  const p=problems[idx];
+  if(hintLevel===0){hintsUsed++;document.getElementById('hused').textContent=hintsUsed;}
+  hintLevel++;
+  const box=document.getElementById('hints');
+  let zstep, dirstep;
+  if(p.type==="between"){
+    zstep=`แปลงเป็น z สองค่า: z = (x−μ)/σ → z<sub>low</sub> = (${p.xlo}−${p.mu})/${p.sigma} = <code>${p.zlo}</code>, z<sub>high</sub> = (${p.xhi}−${p.mu})/${p.sigma} = <code>${p.zhi}</code>`;
+    dirstep=`ช่วงระหว่าง = พื้นที่ซ้ายของ z<sub>high</sub> − พื้นที่ซ้ายของ z<sub>low</sub> = ${p.aHi}% − ${p.aLo}% = <code>${p.ans}%</code>`;
+  } else {
+    zstep=`แปลงเป็น z: z = (x−μ)/σ = (${p.x}−${p.mu})/${p.sigma} = <code>${p.z}</code>`;
+    dirstep = p.type==="left"
+      ? `โจทย์ถาม P(X < x) = พื้นที่ทางซ้าย = <code>${p.ans}%</code>`
+      : `โจทย์ถาม P(X > x) = 100% − พื้นที่ทางซ้าย = 100% − ${p.aL}% = <code>${p.ans}%</code>`;
+  }
+  const steps=[ zstep, `หาพื้นที่ทางซ้ายของ z จากตาราง z หรือ Excel ${excelArea(p)}`, dirstep ];
+  if(hintLevel<=3){
+    const d=document.createElement('div');d.className='hint';
+    d.innerHTML='<b>คำใบ้ '+hintLevel+':</b> '+steps[hintLevel-1];
+    box.appendChild(d);
+  }
+  if(hintLevel>=3){
+    if(!document.getElementById('soln')){
+      const s=document.createElement('div');s.id='soln';s.className='sol';
+      s.innerHTML=`<b>เฉลย:</b> ความน่าจะเป็น = <b>${p.ans}%</b> — พิมพ์ ${p.ans} เพื่อไปต่อ`;
+      box.appendChild(s);
+    }
+    document.getElementById('hintbtn').disabled=true;
+  }
+}
+
+function showNext(){
+  const last=idx===problems.length-1;
+  document.getElementById('actions').innerHTML='<button class="primary" onclick="next()">'+(last?'ดูผลรวม':'ข้อถัดไป')+'</button>';
+}
+function next(){ if(idx===problems.length-1){end();return;} idx++; render(); }
+function end(){
+  document.getElementById('quiz').classList.add('hidden');
+  document.getElementById('endcard').classList.remove('hidden');
+  document.getElementById('final').textContent=score+' / '+problems.length;
+  let m;
+  if(score===problems.length) m='เต็ม! อ่านพื้นที่ใต้โค้งได้แม่นทุกข้อ';
+  else if(score>=problems.length-1) m='เก่งมาก เหลืออีกนิดเดียว';
+  else if(score>=3) m='ทำได้ดี ระวังเรื่องทิศซ้าย/ขวา';
+  else m='ลองใหม่ — วาดรูประบายพื้นที่ก่อนทุกครั้งช่วยได้มาก';
+  document.getElementById('endmsg').textContent=m+' · ใช้คำใบ้ '+hintsUsed+' ครั้ง';
+}
+function restart(){idx=0;score=0;hintsUsed=0;
+  document.getElementById('score').textContent=0;document.getElementById('hused').textContent=0;
+  document.getElementById('endcard').classList.add('hidden');
+  document.getElementById('quiz').classList.remove('hidden');render();}
+
+render();
+</script>
+</body>
+</html>

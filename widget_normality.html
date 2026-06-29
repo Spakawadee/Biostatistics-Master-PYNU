@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="th"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Widget · Normality (Histogram + Q-Q + skew/kurtosis) | Biostat WK02</title>
+<style>
+ :root{--paper:#f4ecde;--card:#fbf5ea;--ink:#3a3330;--ink2:#6b5f57;--muted:#8a8276;
+  --sage:#5e9c7e;--sagef:#e6eee8;--rose:#c0695f;--rosef:#f1d9d2;--mustard:#cda75a;--mustf:#f3e9d2;--mustd:#9a7320;--blue:#4a6fa5;--bluef:#e1e8f0;--line:#d9cdb8;}
+ *{box-sizing:border-box}
+ body{margin:0;background:var(--paper);color:var(--ink);font-family:Georgia,"Garamond","Times New Roman",serif;line-height:1.5;padding:24px 16px;display:flex;justify-content:center}
+ .wrap{width:100%;max-width:700px}
+ h1{font-size:22px;margin:0 0 4px}
+ .sub{color:var(--ink2);font-size:14px;margin:0 0 16px;font-style:italic}
+ .bar{display:flex;justify-content:space-between;align-items:center;font-size:14px;color:var(--ink2);margin-bottom:12px}
+ .score b{color:var(--sage)}
+ .card{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:20px 22px;margin-bottom:14px}
+ .case{background:var(--bluef);border-left:4px solid var(--blue);border-radius:0 8px 8px 0;padding:10px 14px;font-size:14.5px;margin-bottom:12px}
+ .case b{color:var(--blue)}
+ .charts{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+ .chart{background:#fffdf8;border:1px solid var(--line);border-radius:10px;padding:6px 8px 2px;flex:1 1 250px;min-width:240px}
+ .chart svg{width:100%;height:auto;display:block}
+ .chart .t{font-size:12.5px;font-weight:bold;color:var(--ink2);text-align:center;margin:0 0 2px}
+ .stats{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0 4px}
+ .st{font-size:14px;background:#efe6d4;border-radius:14px;padding:3px 12px} .st b{color:var(--ink)}
+ .st.good{background:var(--sagef);color:#3c6b54} .st.bad{background:var(--rosef);color:#9c3b30} .st.warn{background:var(--mustf);color:var(--mustd)}
+ .guide{font-size:12px;color:var(--muted);margin-bottom:10px}
+ .q{font-size:15.5px;font-weight:bold;margin:8px 0 12px}
+ .opt{display:block;width:100%;text-align:left;font-family:inherit;font-size:14.5px;padding:11px 14px;margin-bottom:9px;border:1.5px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);cursor:pointer;transition:.12s;line-height:1.4}
+ .opt:hover:not(:disabled){background:#f3ead7;border-color:var(--mustard)} .opt:disabled{cursor:default}
+ .opt.correct{background:var(--sagef);border-color:var(--sage)} .opt.wrong{background:var(--rosef);border-color:var(--rose)}
+ .why{font-size:13px;color:var(--ink2);margin:-4px 0 10px 6px;padding-left:10px;border-left:3px solid var(--rose)} .why.ok{border-left-color:var(--sage)}
+ .ctrl{margin-top:6px;display:flex;gap:10px;flex-wrap:wrap}
+ button.act{font-family:inherit;font-size:15px;padding:9px 18px;border-radius:9px;cursor:pointer;border:1.5px solid var(--ink2);background:transparent;color:var(--ink)}
+ button.act:hover{background:#efe6d4} button.ghost{border-color:var(--mustard);color:var(--mustd)} button.ghost:hover{background:var(--mustf)}
+ button.primary{background:var(--sage);border-color:var(--sage);color:#fff} button.primary:hover{background:#4f8a6e}
+ .hint{background:var(--mustf);border-left:4px solid var(--mustard);border-radius:0 8px 8px 0;padding:9px 14px;margin:8px 0;font-size:14px}
+ .done{text-align:center;padding:30px}.done .big{font-size:40px;color:var(--sage);margin:6px 0}
+ .foot{font-size:12.5px;color:var(--muted);text-align:center;margin-top:18px}
+ .hidden{display:none}
+</style></head><body>
+<div class="wrap">
+ <h1>Normality — ตรวจความปกติด้วยหลายมุม</h1>
+ <p class="sub">Widget · Week 2 · กรณีศึกษาคลินิก — ดู Histogram + Q-Q + skewness + kurtosis + p (Shapiro) แล้วตัดสินใจ</p>
+ <div class="bar"><span id="prog">ข้อ 1 / 5</span>
+  <span class="score">คะแนน: <b id="score">0</b> / 5 &nbsp;·&nbsp; ใบ้: <span id="hused">0</span></span></div>
+ <div id="quiz"><div class="card" id="qcard"></div></div>
+ <div id="endcard" class="hidden"><div class="card done"><div>เสร็จแล้ว!</div>
+  <div class="big" id="final">0 / 5</div><div id="endmsg" style="color:var(--ink2)"></div>
+  <div style="margin-top:18px"><button class="act primary" onclick="restart()">เริ่มใหม่</button></div></div></div>
+ <p class="foot">ตรวจความปกติให้ดูหลายมุมเสมอ: รูปร่าง (Histogram/Q-Q) + ตัวเลข (skew/kurt) + test (p) + ขนาด n</p>
+</div>
+<script>
+const problems=[{"ctx": "การศึกษานำร่องวัดความดันไดแอสโตลิก (DBP) ของผู้ป่วย 40 คน ก่อนเริ่มยา — วางแผนใช้ paired t-test เปรียบเทียบก่อน–หลัง จึงตรวจความปกติก่อน", "var": "DBP (mmHg)", "q": "จากกราฟและค่าสถิติ (skew ≈ −0.22 · kurt ≈ −0.36 · p = 0.674) ควรสรุปอย่างไร?", "options": [{"t": "ทุกสัญญาณชี้ใกล้ปกติ (skew/kurt ≈ 0, Q-Q ตรง, p > 0.05) → ใช้ paired t-test ได้", "ok": true, "why": ""}, {"t": "p > 0.05 พิสูจน์ว่าข้อมูลปกติแน่นอน", "ok": false, "why": "p > 0.05 = ไม่ปฏิเสธ ไม่ใช่พิสูจน์ — แต่ที่ n=40 และ skew/kurt/Q-Q สอดคล้องกัน การใช้พาราเมตริกสมเหตุผล"}, {"t": "ฮิสโทแกรมเบ้ขวา ต้อง log transform", "ok": false, "why": "ฮิสโทแกรมสมมาตรและ skew ≈ 0 จึงไม่ได้เบ้"}, {"t": "n มากเกินไป ผลเชื่อไม่ได้", "ok": false, "why": "n=40 เป็นขนาดที่เหมาะ"}], "n": 40, "p": 0.674, "skew": -0.22, "kurt": -0.36, "qpts": [[-2.24, -2.14], [-1.78, -2.06], [-1.53, -1.67], [-1.36, -1.65], [-1.21, -1.3], [-1.09, -0.92], [-0.98, -0.85], [-0.89, -0.85], [-0.8, -0.77], [-0.71, -0.69], [-0.64, -0.52], [-0.56, -0.5], [-0.49, -0.45], [-0.42, -0.35], [-0.35, -0.25], [-0.29, -0.25], [-0.22, -0.18], [-0.16, -0.15], [-0.09, -0.14], [-0.03, -0.08], [0.03, -0.06], [0.09, -0.02], [0.16, 0.03], [0.22, 0.14], [0.29, 0.14], [0.35, 0.54], [0.42, 0.56], [0.49, 0.64], [0.56, 0.73], [0.64, 0.76], [0.71, 0.89], [0.8, 0.9], [0.89, 0.93], [0.98, 0.97], [1.09, 1.06], [1.21, 1.14], [1.36, 1.31], [1.53, 1.52], [1.78, 1.68], [2.24, 1.92]], "counts": [4, 1, 5, 9, 6, 7, 5, 3], "edges": [64.6, 68.1, 71.6, 75.1, 78.6, 82.1, 85.6, 89.0, 92.5]}, {"ctx": "วัดระดับ CRP (ตัวชี้การอักเสบ) ของผู้ป่วย 35 คน เพื่อเปรียบเทียบ 2 กลุ่มการรักษา", "var": "CRP (mg/L)", "q": "จากกราฟและค่าสถิติ (skew ≈ 1.10 · kurt ≈ 1.15 · p = 0.005) ควรทำอย่างไรต่อ?", "options": [{"t": "เบ้ขวาชัด (skew > 1, Q-Q โค้ง, p < 0.05) → ใช้ log transform หรือ non-parametric (เช่น Mann–Whitney)", "ok": true, "why": ""}, {"t": "ข้อมูลปกติ ใช้ t-test ได้เลย", "ok": false, "why": "ทั้งฮิสโทแกรม, Q-Q, skew และ p ชี้ตรงกันว่าเบ้ขวา"}, {"t": "n เล็กเกินไป สรุปไม่ได้", "ok": false, "why": "n=35 พอสมควร และสัญญาณทุกตัวสอดคล้องกัน"}, {"t": "p < 0.05 แปลว่าค่าเฉลี่ยสองกลุ่มต่างกัน", "ok": false, "why": "นี่คือการทดสอบความปกติ ไม่ใช่การเปรียบเทียบค่าเฉลี่ย — CRP เป็น classic right-skew"}], "n": 35, "p": 0.005, "skew": 1.1, "kurt": 1.15, "qpts": [[-2.19, -1.31], [-1.72, -1.2], [-1.47, -1.11], [-1.28, -1.09], [-1.13, -1.04], [-1.01, -0.88], [-0.89, -0.78], [-0.79, -0.71], [-0.7, -0.71], [-0.61, -0.7], [-0.52, -0.69], [-0.44, -0.66], [-0.37, -0.62], [-0.29, -0.51], [-0.22, -0.46], [-0.14, -0.34], [-0.07, -0.31], [0.0, -0.3], [0.07, -0.26], [0.14, -0.22], [0.22, -0.21], [0.29, -0.05], [0.37, 0.36], [0.44, 0.52], [0.52, 0.59], [0.61, 0.68], [0.7, 0.71], [0.79, 0.75], [0.89, 0.84], [1.01, 0.94], [1.13, 1.05], [1.28, 1.13], [1.47, 1.22], [1.72, 2.47], [2.19, 2.89]], "counts": [6, 12, 4, 6, 5, 0, 0, 2], "edges": [1.6, 3.2, 4.8, 6.4, 8.0, 9.7, 11.3, 12.9, 14.5]}, {"ctx": "Pilot study วัด albumin ของผู้ป่วยเพียง 8 คน", "var": "Albumin (g/dL)", "q": "n = 8 · p = 0.623 · skew ≈ 0.19 · kurt ≈ 0.67 — สรุปว่า “ปกติ” ได้หรือยัง?", "options": [{"t": "n เล็กมาก ทั้ง Shapiro และ skew/kurt มีความไม่แน่นอนสูง (กำลังต่ำ) → ผ่าน test ไม่ยืนยันความปกติ ควรพิจารณาธรรมชาติตัวแปร + ใช้วิธีที่ robust", "ok": true, "why": ""}, {"t": "p > 0.05 และ skew เกือบ 0 → ปกติแน่นอน สบายใจได้", "ok": false, "why": "ที่ n=8 การทดสอบแทบไม่มีกำลังตรวจจับความไม่ปกติ และ SE ของ skewness ≈ √(6/n) สูงมาก — ค่าที่ได้จึงไม่น่าเชื่อถือ"}, {"t": "เบ้ขวารุนแรง ต้อง transform", "ok": false, "why": "skew ≈ 0.2 ไม่ได้เบ้รุนแรง (และ n เล็กเกินจะฟันธง)"}, {"t": "n < 30 ต้องใช้ non-parametric เสมอ", "ok": false, "why": "ไม่มีกฎตายตัวเช่นนั้น ขึ้นกับธรรมชาติข้อมูลและสมมุติฐาน"}], "n": 8, "p": 0.623, "skew": 0.19, "kurt": 0.67, "qpts": [[-1.53, -1.49], [-0.89, -1.11], [-0.49, -0.08], [-0.16, -0.0], [0.16, 0.15], [0.49, 0.16], [0.89, 0.61], [1.53, 1.76]], "counts": [2, 0, 0, 2, 2, 1, 0, 1], "edges": [3.0, 3.2, 3.4, 3.7, 3.9, 4.1, 4.4, 4.6, 4.8]}, {"ctx": "เก็บระยะเวลานอนโรงพยาบาล (length of stay) ของผู้ป่วย 60 คน", "var": "LOS (วัน)", "q": "จากกราฟและค่าสถิติ (skew ≈ 3.6 · kurt ≈ 15 · p < 0.001) ควรทำอย่างไรต่อ?", "options": [{"t": "เบ้ขวารุนแรง + หางหนัก (kurt สูงมาก) → log transform แล้วตรวจใหม่ หรือรายงาน median + ใช้ non-parametric", "ok": true, "why": ""}, {"t": "p เล็กเพราะ n ใหญ่เท่านั้น ไม่ต้องสนใจรูปร่าง", "ok": false, "why": "n ใหญ่ทำให้ test ไวจริง แต่ skew 3.6 / kurt 15 และฮิสโทแกรมยืนยันว่าเบ้จริง ไม่ใช่สัญญาณหลอก"}, {"t": "ข้อมูลปกติ", "ok": false, "why": "ทุกสัญญาณขัดกับความปกติอย่างชัดเจน"}, {"t": "n ใหญ่แล้ว CLT ครอบคลุม จึงไม่ต้องสนรูปร่างข้อมูลดิบเลย", "ok": false, "why": "CLT ช่วยเรื่องการแจกแจงของค่าเฉลี่ย แต่ความเบ้รุนแรง/ค่าผิดปกติยังกระทบการวิเคราะห์ การ transform มักช่วยให้ตีความดีขึ้น"}], "n": 60, "p": 0.0, "skew": 3.6, "kurt": 14.95, "qpts": [[-2.39, -0.78], [-1.96, -0.74], [-1.73, -0.7], [-1.57, -0.69], [-1.44, -0.69], [-1.33, -0.64], [-1.24, -0.63], [-1.15, -0.63], [-1.07, -0.62], [-1.0, -0.61], [-0.93, -0.61], [-0.87, -0.61], [-0.81, -0.59], [-0.76, -0.59], [-0.7, -0.55], [-0.65, -0.54], [-0.6, -0.53], [-0.55, -0.51], [-0.5, -0.51], [-0.45, -0.46], [-0.41, -0.44], [-0.36, -0.42], [-0.32, -0.37], [-0.27, -0.36], [-0.23, -0.34], [-0.19, -0.34], [-0.15, -0.31], [-0.1, -0.27], [-0.06, -0.26], [-0.02, -0.23], [0.02, -0.23], [0.06, -0.16], [0.1, -0.16], [0.15, -0.14], [0.19, -0.13], [0.23, -0.13], [0.27, -0.11], [0.32, -0.11], [0.36, -0.1], [0.41, -0.09], [0.45, -0.04], [0.5, -0.0], [0.55, 0.0], [0.6, 0.01], [0.65, 0.09], [0.7, 0.09], [0.76, 0.17], [0.81, 0.23], [0.87, 0.23], [0.93, 0.39], [1.0, 0.4], [1.07, 0.45], [1.15, 0.48], [1.24, 0.67], [1.33, 0.84], [1.44, 0.94], [1.57, 1.26], [1.73, 1.41], [1.96, 4.44], [2.39, 4.87]], "counts": [40, 13, 4, 1, 0, 0, 0, 2], "edges": [0.3, 6.1, 12.0, 17.8, 23.7, 29.5, 35.4, 41.2, 47.1]}, {"ctx": "วัด triglyceride ของผู้ป่วย 12 คนใน substudy", "var": "Triglyceride (mg/dL)", "q": "p = 0.128 (> 0.05) แต่ skew ≈ 1.11 · kurt ≈ 1.45 · n = 12 — สรุปว่า “ปกติ” ได้หรือยัง?", "options": [{"t": "p > 0.05 “ไม่ปฏิเสธ” ความปกติ แต่ ≠ “พิสูจน์ว่าปกติ” — skew > 1 และ n เล็ก ชี้ว่าควรระวัง พิจารณา log/non-parametric ประกอบ", "ok": true, "why": ""}, {"t": "p > 0.05 → สรุปได้เลยว่าข้อมูลปกติ ใช้ t-test ได้", "ok": false, "why": "กับดักคลาสสิก: n เล็กทำให้ test กำลังต่ำ จึงไม่ปฏิเสธ ทั้งที่ skew = 1.1 บ่งชี้เบ้ขวา — อย่าเชื่อ p อย่างเดียว"}, {"t": "เบ้ซ้ายชัดเจน", "ok": false, "why": "skew เป็นบวก (≈ +1.1) คือเบ้ขวา ไม่ใช่ซ้าย"}, {"t": "ต้องใช้ non-parametric เสมอ", "ok": false, "why": "ไม่จำเป็นเสมอ แต่ที่นี่ความเบ้ + n เล็กทำให้ควรพิจารณาอย่างจริงจัง"}], "n": 12, "p": 0.128, "skew": 1.11, "kurt": 1.45, "qpts": [[-1.73, -1.09], [-1.15, -1.09], [-0.81, -0.82], [-0.55, -0.61], [-0.32, -0.57], [-0.1, -0.56], [0.1, 0.17], [0.32, 0.3], [0.55, 0.51], [0.81, 0.59], [1.15, 0.83], [1.73, 2.35]], "counts": [3, 3, 1, 3, 1, 0, 0, 1], "edges": [72.4, 94.6, 116.7, 138.9, 161.1, 183.2, 205.4, 227.6, 249.7]}];
+let idx=0,score=0,hintsUsed=0,hintLevel=0,attempted=false,solved=false;
+
+function histSVG(counts,edges){
+ const X0=40,X1=288,Y0=18,Y1=250,nb=counts.length,maxc=Math.max.apply(null,counts);
+ const bw=(X1-X0)/nb; let bars="";
+ for(let i=0;i<nb;i++){const h=maxc?counts[i]/maxc*(Y1-Y0):0,x=X0+i*bw,y=Y1-h;
+   bars+=`<rect x="${(x+1).toFixed(1)}" y="${y.toFixed(1)}" width="${(bw-2).toFixed(1)}" height="${h.toFixed(1)}" fill="#8aa896" stroke="#5e9c7e" stroke-width="0.8"/>`;}
+ const lab=(v,xx)=>`<text x="${xx}" y="${Y1+17}" text-anchor="middle" font-size="11" fill="#6b5f57">${v}</text>`;
+ const mid=edges[Math.floor(edges.length/2)];
+ return `<svg viewBox="0 0 300 275" xmlns="http://www.w3.org/2000/svg" font-family="Georgia,serif">
+   <line x1="${X0}" y1="${Y1}" x2="${X1}" y2="${Y1}" stroke="#d9cdb8" stroke-width="1.5"/>
+   ${bars}${lab(edges[0],X0)}${lab(mid,(X0+X1)/2)}${lab(edges[edges.length-1],X1)}</svg>`;
+}
+function qqSVG(pts){
+ const lo=-2.7,hi=2.7,X0=46,X1=286,Y0=16,Y1=250;
+ const sx=v=>X0+(v-lo)/(hi-lo)*(X1-X0), sy=v=>Y1-(v-lo)/(hi-lo)*(Y1-Y0);
+ let dots=pts.map(q=>`<circle cx="${sx(q[0]).toFixed(1)}" cy="${sy(q[1]).toFixed(1)}" r="3" fill="#4a6fa5" fill-opacity="0.85"/>`).join("");
+ return `<svg viewBox="0 0 300 275" xmlns="http://www.w3.org/2000/svg" font-family="Georgia,serif">
+   <rect x="${X0}" y="${Y0}" width="${X1-X0}" height="${Y1-Y0}" fill="#fff" stroke="#d9cdb8"/>
+   <line x1="${sx(lo)}" y1="${sy(lo)}" x2="${sx(hi)}" y2="${sy(hi)}" stroke="#5e9c7e" stroke-width="2" stroke-dasharray="5,4"/>${dots}
+   <text x="${(X0+X1)/2}" y="268" text-anchor="middle" font-size="11" fill="#6b5f57">Theoretical quantiles</text></svg>`;
+}
+
+function render(){
+ const p=problems[idx];
+ document.getElementById('prog').textContent="ข้อ "+(idx+1)+" / "+problems.length;
+ hintLevel=0;attempted=false;solved=false;
+ const pcls=p.p<0.05?'bad':'good', psign=p.p<0.05?'< 0.05':'> 0.05';
+ const skcls=Math.abs(p.skew)>1?'warn':'';
+ const opts=p.options.map((o,i)=>`<button class="opt" id="opt${i}" onclick="pick(${i})">${o.t}</button>`).join("");
+ document.getElementById('qcard').innerHTML=`
+   <div class="case"><b>กรณีศึกษา:</b> ${p.ctx} &nbsp;<i>(ตัวแปร: ${p.var})</i></div>
+   <div class="charts">
+     <div class="chart"><p class="t">Histogram</p>${histSVG(p.counts,p.edges)}</div>
+     <div class="chart"><p class="t">Q-Q plot</p>${qqSVG(p.qpts)}</div>
+   </div>
+   <div class="stats">
+     <span class="st">n = <b>${p.n}</b></span>
+     <span class="st ${pcls}">Shapiro p = <b>${p.p}</b> (${psign})</span>
+     <span class="st ${skcls}">skewness = <b>${p.skew}</b></span>
+     <span class="st">kurtosis = <b>${p.kurt}</b></span>
+   </div>
+   <div class="guide">อ่านค่า: skew &gt; 0 เบ้ขวา, &lt; 0 เบ้ซ้าย, |skew| &gt; 1 เบ้มาก · kurtosis (ส่วนเกิน) &gt; 0 หางหนากว่าปกติ · SE ของ skew ≈ &radic;(6/n) — n เล็กยิ่งไม่แน่นอน</div>
+   <p class="q">${p.q}</p>
+   ${opts}<div id="why"></div>
+   <div class="ctrl"><button class="act ghost" id="hintbtn" onclick="hint()">ขอคำใบ้</button><span id="nextslot"></span></div>`;
+}
+
+function pick(i){
+ if(solved) return;
+ const p=problems[idx], o=p.options[i], btn=document.getElementById('opt'+i);
+ if(btn.disabled) return;
+ const whybox=document.getElementById('why');
+ if(o.ok){
+   btn.classList.add('correct'); solved=true;
+   if(!attempted && hintLevel===0) score++;
+   document.getElementById('score').textContent=score;
+   for(let k=0;k<p.options.length;k++) document.getElementById('opt'+k).disabled=true;
+   whybox.innerHTML='<div class="why ok"><b>ถูกต้อง ✓</b></div>';
+   const last=idx===problems.length-1;
+   document.getElementById('nextslot').innerHTML='<button class="act primary" onclick="next()">'+(last?'ดูผลรวม':'ข้อถัดไป')+'</button>';
+ } else {
+   attempted=true; btn.classList.add('wrong'); btn.disabled=true;
+   whybox.innerHTML=`<div class="why">✗ ${o.why}</div>`;
+ }
+}
+function hint(){
+ if(hintLevel>=2) return;
+ if(hintLevel===0){hintsUsed++;document.getElementById('hused').textContent=hintsUsed;}
+ hintLevel++;
+ const tips=[
+  "ดู 4 มุมประกอบกัน: <b>รูปร่าง</b> (Histogram สมมาตรไหม / Q-Q ตามเส้นไหม) + <b>ตัวเลข</b> (skew, kurt) + <b>test</b> (p) + <b>ขนาด n</b> — อย่าตัดสินจากมุมเดียว",
+  "ระวัง: p &gt; 0.05 = ไม่ปฏิเสธ (ไม่ใช่พิสูจน์ว่าปกติ) · n เล็ก → test กำลังต่ำ + skew/kurt ไม่นิ่ง · n ใหญ่ → test ไวเกิน ให้ยึดรูปร่าง + ขนาดความเบ้เป็นหลัก"
+ ];
+ const d=document.createElement('div');d.className='hint';
+ d.innerHTML='<b>คำใบ้ '+hintLevel+':</b> '+tips[hintLevel-1];
+ document.getElementById('why').appendChild(d);
+ if(hintLevel>=2) document.getElementById('hintbtn').disabled=true;
+}
+function next(){ if(idx===problems.length-1){end();return;} idx++; render(); }
+function end(){
+ document.getElementById('quiz').classList.add('hidden');
+ document.getElementById('endcard').classList.remove('hidden');
+ document.getElementById('final').textContent=score+' / '+problems.length;
+ let m;
+ if(score===problems.length) m='เต็ม! ตรวจความปกติแบบหลายมุมได้คมมาก';
+ else if(score>=4) m='เก่งมาก ระวังกับดัก p>0.05 กับ n เล็ก';
+ else if(score>=3) m='ทำได้ดี ทบทวนเรื่องกำลังการทดสอบกับ n';
+ else m='ลองใหม่ — ยึดหลัก: ดูรูปร่าง + skew/kurt + p + n ประกอบกันเสมอ';
+ document.getElementById('endmsg').textContent=m+' · ใช้คำใบ้ '+hintsUsed+' ครั้ง';
+}
+function restart(){idx=0;score=0;hintsUsed=0;
+ document.getElementById('score').textContent=0;document.getElementById('hused').textContent=0;
+ document.getElementById('endcard').classList.add('hidden');
+ document.getElementById('quiz').classList.remove('hidden');render();}
+render();
+</script></body></html>
