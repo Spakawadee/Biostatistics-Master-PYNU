@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Widget · CI Calculator — ฝึกคำนวณช่วงความเชื่อมั่น | Biostat WK02</title>
+<style>
+  :root{
+    --paper:#f4ecde; --card:#fbf5ea; --ink:#3a3330; --ink2:#6b5f57; --muted:#8a8276;
+    --sage:#5e9c7e; --sagef:#e6eee8; --rose:#c0695f; --rosef:#f1d9d2;
+    --mustard:#cda75a; --mustf:#f3e9d2; --mustd:#9a7320; --blue:#4a6fa5; --bluef:#e1e8f0; --line:#d9cdb8;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:Georgia,"Garamond","Times New Roman",serif;line-height:1.5;
+    padding:24px 16px;display:flex;justify-content:center}
+  .wrap{width:100%;max-width:680px}
+  h1{font-size:23px;margin:0 0 4px}
+  .sub{color:var(--ink2);font-size:14px;margin:0 0 16px;font-style:italic}
+  .diagram{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:14px 18px 10px;margin-bottom:16px}
+  .diagram svg{width:100%;height:auto;display:block}
+  .dcap{font-size:13px;color:var(--ink2);text-align:center;margin-top:6px}
+  .dcap b{color:var(--mustd)}
+  .bar{display:flex;justify-content:space-between;align-items:center;font-size:14px;color:var(--ink2);margin-bottom:12px}
+  .score b{color:var(--sage)}
+  .card{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:20px 22px;margin-bottom:14px}
+  .tag{display:inline-block;font-size:12.5px;font-weight:bold;padding:3px 12px;border-radius:20px;margin-bottom:10px}
+  .tag.t{background:var(--bluef);color:var(--blue)}
+  .tag.z{background:var(--sagef);color:var(--sage)}
+  .scenario{font-size:15.5px;margin:0 0 12px}
+  .givens{display:flex;flex-wrap:wrap;gap:6px 0;font-size:15px;margin-bottom:6px}
+  .givens span{margin-right:18px} .givens span b{color:var(--ink)}
+  .ask{font-size:16px;font-weight:bold;margin:14px 0 8px}
+  .inrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  input[type=number]{font-family:inherit;font-size:17px;width:110px;padding:8px 10px;
+    border:1.5px solid var(--line);border-radius:8px;background:#fff;color:var(--ink)}
+  input:focus{outline:none;border-color:var(--mustard)}
+  button{font-family:inherit;font-size:15px;padding:9px 18px;border-radius:9px;cursor:pointer;
+    border:1.5px solid var(--ink2);background:transparent;color:var(--ink);transition:.15s}
+  button:hover{background:#efe6d4}
+  button:disabled{opacity:.5;cursor:default}
+  button.primary{background:var(--sage);border-color:var(--sage);color:#fff}
+  button.primary:hover{background:#4f8a6e}
+  button.ghost{border-color:var(--mustard);color:var(--mustd)}
+  button.ghost:hover{background:var(--mustf)}
+  .fb{margin-top:14px;font-size:15px;padding:12px 16px;border-radius:10px;display:none}
+  .fb.ok{display:block;background:var(--sagef);border:1.5px solid var(--sage)}
+  .fb.no{display:block;background:var(--rosef);border:1.5px solid var(--rose)}
+  .fb.ok b{color:var(--sage)} .fb.no b{color:var(--rose)}
+  .hints{margin-top:12px}
+  .hint{background:var(--mustf);border-left:4px solid var(--mustard);border-radius:0 8px 8px 0;
+    padding:9px 14px;margin-bottom:8px;font-size:14.5px}
+  .hint code{font-family:"Courier New",monospace;background:#fff;padding:1px 5px;border-radius:4px}
+  .ex{display:block;margin-top:4px;font-family:"Courier New",monospace;font-size:13px;color:var(--blue)}
+  .ex b{color:var(--blue)}
+  .sol{background:var(--sagef);border-left:4px solid var(--sage);border-radius:0 8px 8px 0;
+    padding:10px 14px;margin-top:10px;font-size:15px}
+  .actions{margin-top:16px;display:flex;gap:10px;flex-wrap:wrap}
+  .done{text-align:center;padding:30px}
+  .done .big{font-size:40px;color:var(--sage);margin:6px 0}
+  .foot{font-size:12.5px;color:var(--muted);text-align:center;margin-top:18px}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>CI Calculator — ฝึกคำนวณช่วงความเชื่อมั่น</h1>
+  <p class="sub">Widget · Week 2 · ตรวจคำตอบทันที — ตอบผิดมีคำใบ้ไล่ระดับ (พร้อมสูตร Excel) จนถูก</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 600 150" xmlns="http://www.w3.org/2000/svg" font-family="Georgia,serif">
+      <defs>
+        <marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+          <path d="M0,0 L7,3 L0,6 Z" fill="#9a7320"/>
+        </marker>
+        <marker id="ahL" markerWidth="9" markerHeight="9" refX="2" refY="3" orient="auto">
+          <path d="M7,0 L0,3 L7,6 Z" fill="#9a7320"/>
+        </marker>
+      </defs>
+      <!-- axis -->
+      <line x1="40" y1="75" x2="560" y2="75" stroke="#d9cdb8" stroke-width="2"/>
+      <!-- CI band -->
+      <rect x="150" y="63" width="300" height="24" rx="3" fill="#e6eee8" stroke="#5e9c7e" stroke-width="1.5"/>
+      <!-- end caps -->
+      <line x1="150" y1="52" x2="150" y2="98" stroke="#3a3330" stroke-width="2.5"/>
+      <line x1="450" y1="52" x2="450" y2="98" stroke="#3a3330" stroke-width="2.5"/>
+      <!-- mean -->
+      <line x1="300" y1="40" x2="300" y2="104" stroke="#3a3330" stroke-width="2" stroke-dasharray="5,4"/>
+      <circle cx="300" cy="75" r="5.5" fill="#5e9c7e" stroke="#3a3330" stroke-width="1.2"/>
+      <text x="300" y="33" text-anchor="middle" font-size="15" fill="#3a3330" font-weight="bold">ค่าเฉลี่ย (mean)</text>
+      <!-- labels -->
+      <text x="150" y="116" text-anchor="middle" font-size="14" fill="#3a3330">LCI (ขอบล่าง)</text>
+      <text x="450" y="116" text-anchor="middle" font-size="14" fill="#3a3330">UCI (ขอบบน)</text>
+      <!-- margin arrows -->
+      <line x1="303" y1="133" x2="450" y2="133" stroke="#9a7320" stroke-width="2" marker-end="url(#ah)"/>
+      <line x1="297" y1="133" x2="150" y2="133" stroke="#9a7320" stroke-width="2" marker-end="url(#ahL)"/>
+      <text x="375" y="148" text-anchor="middle" font-size="13.5" fill="#9a7320" font-weight="bold">margin</text>
+      <text x="225" y="148" text-anchor="middle" font-size="13.5" fill="#9a7320" font-weight="bold">margin</text>
+    </svg>
+    <p class="dcap"><b>margin</b> = ระยะจากค่าเฉลี่ยถึงขอบ CI (เท่ากันทั้งสองข้าง) · CI = ค่าเฉลี่ย &plusmn; margin · ความกว้างทั้งหมด = 2 &times; margin</p>
+  </div>
+
+  <div class="bar">
+    <span class="prog" id="prog">ข้อ 1 / 5</span>
+    <span class="score">คะแนน: <b id="score">0</b> / 5 &nbsp;·&nbsp; ใบ้ที่ใช้: <span id="hused">0</span></span>
+  </div>
+
+  <div id="quiz"><div class="card" id="qcard"></div></div>
+
+  <div id="endcard" class="hidden">
+    <div class="card done">
+      <div>เสร็จแล้ว!</div>
+      <div class="big" id="final">0 / 5</div>
+      <div id="endmsg" style="color:var(--ink2)"></div>
+      <div style="margin-top:18px"><button class="primary" onclick="restart()">เริ่มใหม่</button></div>
+    </div>
+  </div>
+
+  <p class="foot">วิธีคิด: SE = (SD หรือ σ)/&radic;n → margin = (t หรือ z) &times; SE → CI = mean &plusmn; margin</p>
+</div>
+
+<script>
+const problems=[
+ {id:1,ctx:"ชั่งน้ำหนักเม็ดยา 5 เม็ดจากล็อตการผลิต",unit:"น้ำหนักเม็ดยา (mg)",
+  known:false,mean:716.4,spread:6.841,sLab:"SD",n:5,conf:"95%",alpha:0.05,df:4,crit:2.776,cLab:"t",se:3.06,margin:8.49,mode:"margin",tol:0.5},
+ {id:2,ctx:"ตรวจปริมาณตัวยาสำคัญต่อเม็ด ทราบ σ จากสายการผลิต (σ = 16.8)",unit:"ปริมาณตัวยา (mg)",
+  known:true,mean:752.8,spread:16.8,sLab:"σ",n:5,conf:"95%",alpha:0.05,crit:1.96,cLab:"z",se:7.51,margin:14.73,mode:"margin",tol:0.5},
+ {id:3,ctx:"ทดสอบเปอร์เซ็นต์การละลายของยา (dissolution) 9 ตัวอย่าง",unit:"% การละลาย",
+  known:false,mean:48.7,spread:5.4,sLab:"SD",n:9,conf:"95%",alpha:0.05,df:8,crit:2.306,cLab:"t",se:1.80,margin:4.15,mode:"margin",tol:0.5},
+ {id:4,ctx:"วัดความดันโลหิตซิสโตลิกผู้ป่วย 16 คน — หาช่วง CI 90%",unit:"SBP (mmHg)",
+  known:false,mean:130,spread:8,sLab:"SD",n:16,conf:"90%",alpha:0.10,df:15,crit:1.753,cLab:"t",se:2.0,margin:3.51,mode:"ci",tol:0.6},
+ {id:5,ctx:"วัดฮีโมโกลบินผู้ป่วย 36 คน ทราบ σ ของวิธีวัด (σ = 1.2) — หาช่วง CI 99%",unit:"Hb (g/dL)",
+  known:true,mean:13.5,spread:1.2,sLab:"σ",n:36,conf:"99%",alpha:0.01,crit:2.576,cLab:"z",se:0.20,margin:0.52,mode:"ci",tol:0.2},
+];
+
+let idx=0, score=0, hintsUsed=0, hintLevel=0, solved=false;
+const lo=p=>(p.mean-p.margin), hi=p=>(p.mean+p.margin);
+const f1=x=>x.toFixed(1);
+
+function critFormula(p){
+  if(p.known){const inner=+(1-p.alpha/2).toFixed(3);
+    return `<span class="ex">Excel: <b>=NORM.S.INV(${inner})</b> → ${p.crit}</span>`;}
+  return `<span class="ex">Excel: <b>=T.INV.2T(${p.alpha}, ${p.df})</b> → ${p.crit}</span>`;
+}
+
+function render(){
+  const p=problems[idx];
+  document.getElementById('prog').textContent="ข้อ "+(idx+1)+" / "+problems.length;
+  hintLevel=0; solved=false;
+  const inputUI = p.mode==="ci"
+    ? `<span>${p.conf} CI = [</span>
+       <input type="number" id="ansLo" step="0.01" placeholder="ขอบล่าง" autocomplete="off">
+       <span>,</span>
+       <input type="number" id="ansHi" step="0.01" placeholder="ขอบบน" autocomplete="off">
+       <span>]</span>`
+    : `<span>margin =</span>
+       <input type="number" id="ans" step="0.01" placeholder="?" autocomplete="off">`;
+  const askText = p.mode==="ci" ? `หาช่วงความเชื่อมั่น ${p.conf} (CI) ?` : "หา margin (ครึ่งความกว้างของ CI) ?";
+  document.getElementById('qcard').innerHTML=`
+    <span class="tag ${p.known?'z':'t'}">${p.known?'ทราบ σ → ใช้ z':'ไม่ทราบ σ → ใช้ t'}</span>
+    <p class="scenario">${p.ctx}</p>
+    <div class="givens">
+      <span>${p.unit}</span>
+      <span>ค่าเฉลี่ย = <b>${p.mean}</b></span>
+      <span>${p.sLab} = <b>${p.spread}</b></span>
+      <span>n = <b>${p.n}</b></span>
+      <span>ความเชื่อมั่น <b>${p.conf}</b></span>
+    </div>
+    <p class="ask">${askText}</p>
+    <div class="inrow">
+      ${inputUI}
+      <button class="primary" id="checkbtn" onclick="check()">ตรวจคำตอบ</button>
+      <button class="ghost" id="hintbtn" onclick="hint()">ขอคำใบ้</button>
+    </div>
+    <div class="fb" id="fb"></div>
+    <div class="hints" id="hints"></div>
+    <div class="actions" id="actions"></div>`;
+  const first=document.getElementById(p.mode==="ci"?'ansLo':'ans');
+  first.focus();
+  document.querySelectorAll('#qcard input').forEach(el=>
+    el.addEventListener('keydown',e=>{if(e.key==='Enter')check();}));
+}
+
+function check(){
+  if(solved) return;
+  const p=problems[idx]; const fb=document.getElementById('fb');
+  let okAns=false, near=false;
+  if(p.mode==="ci"){
+    const a=parseFloat(document.getElementById('ansLo').value);
+    const b=parseFloat(document.getElementById('ansHi').value);
+    if(isNaN(a)||isNaN(b)){fb.className='fb no';fb.innerHTML='ใส่ทั้งขอบล่างและขอบบนก่อนนะ';return;}
+    okAns = Math.abs(a-lo(p))<=p.tol && Math.abs(b-hi(p))<=p.tol;
+    near = Math.abs(a-lo(p))<=p.tol*4 && Math.abs(b-hi(p))<=p.tol*4;
+  } else {
+    const v=parseFloat(document.getElementById('ans').value);
+    if(isNaN(v)){fb.className='fb no';fb.innerHTML='ลองใส่ตัวเลขก่อนนะ';return;}
+    okAns = Math.abs(v-p.margin)<=p.tol;
+    near = Math.abs(v-p.margin)<3;
+  }
+  if(okAns){
+    solved=true; if(hintLevel===0) score++;
+    fb.className='fb ok';
+    fb.innerHTML=`<b>ถูกต้อง!</b> ${p.conf} CI = ${p.mean} &plusmn; ${p.margin} = <b>[${f1(lo(p))}, ${f1(hi(p))}]</b>`
+      +(hintLevel>0?' <span style="color:var(--ink2)">(ใช้คำใบ้ ข้อนี้ไม่นับคะแนน)</span>':'');
+    document.getElementById('score').textContent=score;
+    document.getElementById('checkbtn').disabled=true;
+    document.getElementById('hintbtn').disabled=true;
+    showNext();
+  } else {
+    fb.className='fb no';
+    fb.innerHTML='<b>ยังไม่ใช่.</b> '+(near?'ใกล้แล้ว — เช็กการปัดเลขหรือค่าวิกฤตอีกที':'ลองดูคำใบ้ แล้วคำนวณใหม่')
+      +' &nbsp;<button class="ghost" onclick="hint()">ขอคำใบ้</button>';
+  }
+}
+
+function hint(){
+  const p=problems[idx];
+  if(hintLevel===0){hintsUsed++;document.getElementById('hused').textContent=hintsUsed;}
+  hintLevel++;
+  const box=document.getElementById('hints');
+  const steps=[
+    (p.known?`ทราบ σ → ใช้ <b>z</b> ที่ ${p.conf} → z = <code>${p.crit}</code>`
+            :`ไม่ทราบ σ → ใช้ <b>t</b>, df = n−1 = ${p.df} → t = <code>${p.crit}</code>`)+critFormula(p),
+    `คำนวณ <b>SE</b> = ${p.sLab}/&radic;n = ${p.spread}/&radic;${p.n} = <code>${p.se}</code>`,
+    `<b>margin</b> = ${p.cLab} &times; SE = ${p.crit} &times; ${p.se} = <code>${p.margin}</code>`,
+    `<b>CI</b> = ค่าเฉลี่ย &plusmn; margin = ${p.mean} &plusmn; ${p.margin} = <code>[${f1(lo(p))}, ${f1(hi(p))}]</code>`
+  ];
+  const maxHint = p.mode==="ci" ? 4 : 3;
+  if(hintLevel<=maxHint){
+    const d=document.createElement('div');d.className='hint';
+    d.innerHTML='<b>คำใบ้ '+hintLevel+':</b> '+steps[hintLevel-1];
+    box.appendChild(d);
+  }
+  if(hintLevel>=maxHint){
+    if(!document.getElementById('soln')){
+      const s=document.createElement('div');s.id='soln';s.className='sol';
+      s.innerHTML = p.mode==="ci"
+        ? `<b>เฉลย:</b> ${p.conf} CI = <b>[${f1(lo(p))}, ${f1(hi(p))}]</b> — พิมพ์ ${f1(lo(p))} และ ${f1(hi(p))} เพื่อไปต่อ`
+        : `<b>เฉลย:</b> margin = <b>${p.margin}</b> — พิมพ์ ${p.margin} เพื่อไปต่อ`;
+      box.appendChild(s);
+    }
+    document.getElementById('hintbtn').disabled=true;
+  }
+}
+
+function showNext(){
+  const last=idx===problems.length-1;
+  document.getElementById('actions').innerHTML=
+    '<button class="primary" onclick="next()">'+(last?'ดูผลรวม':'ข้อถัดไป')+'</button>';
+}
+function next(){ if(idx===problems.length-1){end();return;} idx++; render(); }
+function end(){
+  document.getElementById('quiz').classList.add('hidden');
+  document.getElementById('endcard').classList.remove('hidden');
+  document.getElementById('final').textContent=score+' / '+problems.length;
+  let m;
+  if(score===problems.length) m='เต็ม! คำนวณ CI ได้แม่นทุกข้อ';
+  else if(score>=problems.length-1) m='เก่งมาก เหลืออีกนิดเดียว';
+  else if(score>=3) m='ทำได้ดี ลองทบทวนข้อที่ใช้คำใบ้';
+  else m='ไม่เป็นไร ลองใหม่อีกรอบ ทบทวน SE → margin → CI';
+  document.getElementById('endmsg').textContent=m+' · ใช้คำใบ้ '+hintsUsed+' ครั้ง';
+}
+function restart(){idx=0;score=0;hintsUsed=0;
+  document.getElementById('score').textContent=0;document.getElementById('hused').textContent=0;
+  document.getElementById('endcard').classList.add('hidden');
+  document.getElementById('quiz').classList.remove('hidden');render();}
+
+render();
+</script>
+</body>
+</html>
