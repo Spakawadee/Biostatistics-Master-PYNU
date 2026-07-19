@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ordinal vs Disordinal Interaction — main effect ยังใช้ได้ไหม?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f4ecde; --ink:#5a5246; --mute:#9a8f7d; --line:#d9cdb8;
+  --rose:#c98b86; --sage:#8aa896; --blue:#8fa8bf; --gold:#cda75a; --barfill:#cdbfa6;
+  --card:#fffdf8;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; padding:22px 16px 34px;
+  background:var(--paper); color:var(--ink);
+  font-family:'Sarabun','Noto Sans Thai',-apple-system,'Segoe UI',sans-serif;
+  font-size:15px; line-height:1.55;
+}
+.wrap{max-width:940px;margin:0 auto}
+h1{font-size:22px;font-weight:700;margin:0 0 4px;letter-spacing:-.2px}
+.sub{color:var(--mute);font-size:14px;margin:0 0 20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px 18px 16px;margin-bottom:16px}
+.eyebrow{font-size:11.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--mute);margin:0 0 12px}
+.grid{display:grid;grid-template-columns:1.15fr .85fr;gap:22px;align-items:start}
+@media(max-width:720px){.grid{grid-template-columns:1fr}}
+svg{display:block;width:100%;height:auto;overflow:visible}
+
+.readout{border-left:3px solid var(--line);padding-left:14px}
+.row{display:flex;justify-content:space-between;align-items:baseline;padding:7px 0;border-bottom:1px dotted var(--line)}
+.row:last-of-type{border-bottom:none}
+.row .lab{font-size:13.5px;color:var(--ink)}
+.row .val{font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:15px;font-weight:700}
+
+.mebox{margin-top:14px;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:12px 13px}
+.mebox .t{font-size:12px;font-weight:700;letter-spacing:.05em;color:var(--mute);text-transform:uppercase;margin-bottom:7px}
+.metrack{height:26px;background:#ece1cd;border-radius:4px;position:relative;overflow:hidden}
+.mefill{position:absolute;top:0;bottom:0;left:0;background:var(--barfill);transition:width .12s linear,background .2s}
+.menum{position:relative;font-family:ui-monospace,Menlo,monospace;font-size:15px;font-weight:700;line-height:26px;padding-left:9px}
+
+.badge{margin-top:14px;border-radius:8px;padding:12px 13px;color:#fff;font-size:13.5px;line-height:1.5}
+.badge b{display:block;font-size:15px;margin-bottom:4px;letter-spacing:.01em}
+
+.controls{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+input[type=range]{width:100%;accent-color:var(--rose);height:26px;cursor:pointer}
+.ticks{display:flex;justify-content:space-between;font-size:11.5px;color:var(--mute);margin-top:-4px}
+.presets{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+button{
+  font-family:inherit;font-size:13px;font-weight:600;color:var(--ink);
+  background:var(--paper);border:1px solid var(--line);border-radius:20px;
+  padding:7px 15px;cursor:pointer;transition:background .15s,border-color .15s
+}
+button:hover{background:#ece1cd}
+button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+button.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+.two{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:720px){.two{grid-template-columns:1fr}}
+.mini h3{font-size:14.5px;margin:0 0 2px;font-weight:700}
+.mini .cap{font-size:12.5px;color:var(--mute);margin:0 0 8px}
+.verdict{font-size:13px;margin-top:8px;padding:9px 11px;border-radius:7px;line-height:1.5}
+.v-ok{background:#e9f0ec;border-left:3px solid var(--sage)}
+.v-no{background:#f7e9e8;border-left:3px solid var(--rose)}
+.foot{font-size:12.5px;color:var(--mute);margin-top:14px;line-height:1.6}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>มี interaction แล้ว main effect ยังใช้ได้ไหม?</h1>
+  <p class="sub">คำตอบไม่ได้อยู่ที่ p-value ของ interaction — อยู่ที่ <b>เส้นตัดกันหรือไม่</b></p>
+
+  <!-- ============ SECTION 1 : interactive ============ -->
+  <div class="card">
+    <p class="eyebrow">ลากดูเอง · เปรียบเทียบยา B กับยา C ใน 2 โรงพยาบาล</p>
+    <div class="grid">
+      <div><svg id="plot" viewBox="0 0 470 320" role="img" aria-label="กราฟเส้นเปรียบเทียบยา B และยา C ในสองโรงพยาบาล"></svg></div>
+
+      <div class="readout">
+        <div class="row"><span class="lab">รพ. I &nbsp;· B ดีกว่า C</span><span class="val" id="s1">+4.0</span></div>
+        <div class="row"><span class="lab">รพ. III · B ดีกว่า C</span><span class="val" id="s2">+0.0</span></div>
+        <div class="row"><span class="lab" style="color:var(--mute)">interaction contrast</span><span class="val" id="ic" style="color:var(--mute)">0.0</span></div>
+
+        <div class="mebox">
+          <div class="t">Main effect (ค่าเฉลี่ยรวม 2 รพ.)</div>
+          <div class="metrack"><div class="mefill" id="mefill"></div><div class="menum" id="menum">+4.0 นาที</div></div>
+        </div>
+
+        <div class="badge" id="badge"><b></b><span></span></div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <label for="sl" style="font-size:13px;font-weight:600">ลากเพื่อเปลี่ยนผลของ <span style="color:var(--rose)">ยา C</span> ที่ รพ. III</label>
+      <input type="range" id="sl" min="0" max="14" step="0.5" value="4">
+      <div class="ticks"><span>ยา C แย่ที่ รพ.III</span><span>เส้นขนาน</span><span>เส้นตัดกัน</span><span>ยา C ดีมากที่ รพ.III</span></div>
+      <div class="presets">
+        <button data-v="4">① เส้นขนาน — ไม่มี interaction</button>
+        <button data-v="7">② Ordinal — ไม่กลับด้าน</button>
+        <button data-v="12">③ Disordinal — กลับด้าน</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SECTION 2 : real data ============ -->
+  <div class="card">
+    <p class="eyebrow">ข้อมูลจริงจากเด็ค · Table 8.14 หน้า 46–48 · interaction F(4,63)=7.05, p&lt;.001</p>
+    <div class="two">
+      <div class="mini">
+        <h3>ยา C เทียบ ยา A</h3>
+        <p class="cap">เส้นแทบขนาน — ไม่มีวันตัดกัน</p>
+        <svg id="realCA" viewBox="0 0 340 210"></svg>
+        <div class="verdict v-ok"><b>Ordinal</b> → main effect <b>+3.17 นาที</b> อธิบายได้ตรงทั้ง 3 รพ. (จริง: +2.99, +3.36, +3.15) — <b>รายงาน main effect ได้เลย</b></div>
+      </div>
+      <div class="mini">
+        <h3>ยา B เทียบ ยา C</h3>
+        <p class="cap">เส้นตัดกันระหว่าง รพ. I กับ II</p>
+        <svg id="realBC" viewBox="0 0 340 210"></svg>
+        <div class="verdict v-no"><b>Disordinal</b> → main effect <b>+0.43 นาที</b> (เกือบศูนย์) แต่จริง ๆ รพ.I ยา C ดีกว่า 2.79 / รพ.III ยา B ดีกว่า 2.60 — <b>ห้ามรายงาน main effect เดี่ยว ๆ</b></div>
+      </div>
+    </div>
+    <p class="foot"><b>จุดสำคัญ:</b> ทั้งสองภาพมาจาก interaction ตัวเดียวกัน ที่ significant เหมือนกัน แต่ main effect ใช้ได้ในภาพซ้าย และหลอกในภาพขวา → การมี interaction ไม่ได้แปลว่า main effect เสียหมด และ p-value ของ interaction บอกไม่ได้ว่าเป็นแบบไหน <b>ต้องดูรูป</b></p>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  var C={paper:'#f4ecde',ink:'#5a5246',mute:'#9a8f7d',line:'#d9cdb8',
+         rose:'#c98b86',sage:'#8aa896',blue:'#8fa8bf',gold:'#cda75a'};
+  var NS='http://www.w3.org/2000/svg';
+  function el(t,a){var e=document.createElementNS(NS,t);for(var k in a)e.setAttribute(k,a[k]);return e;}
+  function txt(x,y,s,a){var t=el('text',a||{});t.setAttribute('x',x);t.setAttribute('y',y);t.textContent=s;return t;}
+
+  /* ---------- main interactive plot ---------- */
+  var B1=8, B2=8, C1=4;                 // ยา B คงที่ทั้งสอง รพ. ; ยา C ที่ รพ.I คงที่
+  var P={l:52,r:26,t:18,b:44,w:470,h:320};
+  var pw=P.w-P.l-P.r, ph=P.h-P.t-P.b;
+  var YMAX=14;
+  function X(i){return P.l + (i===0 ? pw*0.16 : pw*0.84);}
+  function Y(v){return P.t + ph - (v/YMAX)*ph;}
+
+  function drawMain(C2){
+    var svg=document.getElementById('plot'); svg.innerHTML='';
+    // gridlines
+    for(var g=0; g<=YMAX; g+=2){
+      svg.appendChild(el('line',{x1:P.l,x2:P.l+pw,y1:Y(g),y2:Y(g),stroke:C.line,'stroke-width':g===0?1.4:1,
+        'stroke-dasharray':g===0?'':'3 4'}));
+      svg.appendChild(txt(P.l-9,Y(g)+4,g,{fill:C.mute,'font-size':11,'text-anchor':'end'}));
+    }
+    svg.appendChild(txt(P.l-38,P.t+ph/2,'นาที',{fill:C.mute,'font-size':11,'text-anchor':'middle',
+      transform:'rotate(-90 '+(P.l-38)+' '+(P.t+ph/2)+')'}));
+    // x labels
+    ['รพ. I','รพ. III'].forEach(function(s,i){
+      svg.appendChild(txt(X(i),P.t+ph+24,s,{fill:C.ink,'font-size':13,'font-weight':600,'text-anchor':'middle'}));
+    });
+
+    // crossing marker
+    if(C2>C1){
+      var denom=(B1-C1)-(B2-C2);
+      if(Math.abs(denom)>1e-9){
+        var f=(B1-C1)/denom;
+        if(f>0&&f<1){
+          var cx=X(0)+(X(1)-X(0))*f, cy=Y(B1+(B2-B1)*f);
+          svg.appendChild(el('line',{x1:cx,x2:cx,y1:P.t,y2:P.t+ph,stroke:C.gold,'stroke-width':1.2,'stroke-dasharray':'2 4'}));
+          svg.appendChild(el('circle',{cx:cx,cy:cy,r:5,fill:'none',stroke:C.gold,'stroke-width':2}));
+          svg.appendChild(txt(cx,P.t-4,'จุดตัด',{fill:C.gold,'font-size':11,'font-weight':700,'text-anchor':'middle'}));
+        }
+      }
+    }
+
+    // gap shading at each site
+    [[0,B1,C1],[1,B2,C2]].forEach(function(d){
+      var x=X(d[0]), hi=Math.max(d[1],d[2]), lo=Math.min(d[1],d[2]);
+      if(hi-lo>0.05){
+        svg.appendChild(el('line',{x1:x,x2:x,y1:Y(hi),y2:Y(lo),
+          stroke:(d[1]>=d[2]?C.blue:C.rose),'stroke-width':7,opacity:.2,'stroke-linecap':'round'}));
+      }
+    });
+
+    // lines
+    function line(y1,y2,col,w){
+      svg.appendChild(el('line',{x1:X(0),y1:Y(y1),x2:X(1),y2:Y(y2),stroke:col,'stroke-width':w||3,'stroke-linecap':'round'}));
+      svg.appendChild(el('circle',{cx:X(0),cy:Y(y1),r:5.5,fill:col}));
+      svg.appendChild(el('circle',{cx:X(1),cy:Y(y2),r:5.5,fill:col}));
+    }
+    line(B1,B2,C.blue); line(C1,C2,C.rose);
+
+    // series labels
+    svg.appendChild(txt(X(1)+12,Y(B2)+4,'ยา B',{fill:C.blue,'font-size':13,'font-weight':700}));
+    svg.appendChild(txt(X(1)+12,Y(C2)+4,'ยา C',{fill:C.rose,'font-size':13,'font-weight':700}));
+  }
+
+  /* ---------- readout ---------- */
+  function sgn(v){return (v>=0?'+':'\u2212')+Math.abs(v).toFixed(1);}
+  function update(C2){
+    var s1=B1-C1, s2=B2-C2;
+    var main=((B1+B2)/2)-((C1+C2)/2);
+    var ic=s1-s2;
+    document.getElementById('s1').textContent=sgn(s1);
+    document.getElementById('s2').textContent=sgn(s2);
+    document.getElementById('ic').textContent=sgn(ic);
+    document.getElementById('s1').style.color = s1>=0?C.blue:C.rose;
+    document.getElementById('s2').style.color = s2>=0?C.blue:C.rose;
+
+    var f=document.getElementById('mefill');
+    f.style.width=Math.min(100,Math.abs(main)/6*100)+'%';
+    document.getElementById('menum').textContent=sgn(main)+' นาที';
+
+    var b=document.getElementById('badge'), bt=b.querySelector('b'), bs=b.querySelector('span');
+    if(Math.abs(ic)<0.26){
+      b.style.background=C.blue; f.style.background=C.blue;
+      bt.textContent='ไม่มี interaction — เส้นขนาน';
+      bs.textContent='ยา B ดีกว่า '+Math.abs(s1).toFixed(1)+' นาที เท่ากันทั้งสอง รพ. main effect อธิบายได้ครบ ไม่ต้องแยกดูรายที่';
+    } else if(s1*s2>0 || Math.abs(s2)<0.05){
+      b.style.background=C.sage; f.style.background=C.sage;
+      bt.textContent='Ordinal — ไม่กลับด้าน ✓ main effect ใช้ได้';
+      bs.textContent='ยา B ดีกว่าทั้งสองที่ ('+Math.abs(s1).toFixed(1)+' และ '+Math.abs(s2).toFixed(1)+' นาที) ทิศทางไม่เคยสลับ → รายงาน main effect '+sgn(main)+' ได้ แต่ต้องบอกด้วยว่าขนาดต่างกันแค่ไหน';
+    } else {
+      b.style.background=C.rose; f.style.background=C.rose;
+      bt.textContent='Disordinal — กลับด้าน ✗ main effect หลอก';
+      bs.textContent='main effect บอกว่าต่างกันแค่ '+Math.abs(main).toFixed(1)+' นาที แต่จริง ๆ รพ.I ยา B ดีกว่า '+Math.abs(s1).toFixed(1)+' ส่วน รพ.III ยา C ดีกว่า '+Math.abs(s2).toFixed(1)+' → ค่าเฉลี่ยหักล้างกันเอง ไม่ตรงกับที่ไหนเลย';
+    }
+    drawMain(C2);
+  }
+
+  var sl=document.getElementById('sl');
+  sl.addEventListener('input',function(){
+    update(+sl.value);
+    document.querySelectorAll('.presets button').forEach(function(x){
+      x.classList.toggle('on', +x.dataset.v===+sl.value);
+    });
+  });
+  document.querySelectorAll('.presets button').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      sl.value=btn.dataset.v; sl.dispatchEvent(new Event('input'));
+    });
+  });
+
+  /* ---------- real-data mini plots ---------- */
+  function mini(id, series, ymin, ymax){
+    var svg=document.getElementById(id); svg.innerHTML='';
+    var Q={l:38,r:52,t:14,b:34,w:340,h:210};
+    var w=Q.w-Q.l-Q.r, h=Q.h-Q.t-Q.b;
+    function x(i){return Q.l + w*(i/2);}
+    function y(v){return Q.t + h - ((v-ymin)/(ymax-ymin))*h;}
+    for(var g=Math.ceil(ymin); g<=ymax; g+=2){
+      svg.appendChild(el('line',{x1:Q.l,x2:Q.l+w,y1:y(g),y2:y(g),stroke:C.line,'stroke-width':1,'stroke-dasharray':'3 4'}));
+      svg.appendChild(txt(Q.l-8,y(g)+4,g,{fill:C.mute,'font-size':10.5,'text-anchor':'end'}));
+    }
+    ['รพ. I','รพ. II','รพ. III'].forEach(function(s,i){
+      svg.appendChild(txt(x(i),Q.t+h+21,s,{fill:C.ink,'font-size':11.5,'text-anchor':'middle'}));
+    });
+    series.forEach(function(sr){
+      var d=sr.v.map(function(v,i){return (i?'L':'M')+x(i)+' '+y(v);}).join(' ');
+      svg.appendChild(el('path',{d:d,fill:'none',stroke:sr.c,'stroke-width':2.6,'stroke-linecap':'round','stroke-linejoin':'round'}));
+      sr.v.forEach(function(v,i){svg.appendChild(el('circle',{cx:x(i),cy:y(v),r:4.2,fill:sr.c}));});
+      svg.appendChild(txt(x(2)+9,y(sr.v[2])+4,sr.n,{fill:sr.c,'font-size':12,'font-weight':700}));
+    });
+  }
+  var A=[3.475,3.125,2.113], Bv=[3.675,7.975,7.863], Cv=[6.463,6.488,5.263];
+  mini('realCA',[{v:Cv,c:C.sage,n:'ยา C'},{v:A,c:C.gold,n:'ยา A'}],0,10);
+  mini('realBC',[{v:Bv,c:C.blue,n:'ยา B'},{v:Cv,c:C.rose,n:'ยา C'}],0,10);
+
+  update(4);
+  document.querySelector('.presets button').classList.add('on');
+})();
+</script>
+</body>
+</html>
