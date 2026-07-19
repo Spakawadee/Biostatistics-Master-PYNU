@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Type I / II / III SS — ทำไม interaction ถึงได้เลขเดียวกันเสมอ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f4ecde; --ink:#5a5246; --mute:#9a8f7d; --line:#d9cdb8;
+  --rose:#c98b86; --sage:#8aa896; --blue:#8fa8bf; --gold:#cda75a; --barfill:#cdbfa6;
+  --card:#fffdf8;
+}
+*{box-sizing:border-box}
+body{margin:0;padding:22px 16px 34px;background:var(--paper);color:var(--ink);
+  font-family:'Sarabun','Noto Sans Thai',-apple-system,'Segoe UI',sans-serif;font-size:15px;line-height:1.55}
+.wrap{max-width:900px;margin:0 auto}
+h1{font-size:22px;font-weight:700;margin:0 0 4px;letter-spacing:-.2px}
+.sub{color:var(--mute);font-size:14px;margin:0 0 20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:16px}
+.eyebrow{font-size:11.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--mute);margin:0 0 13px}
+
+/* ladder */
+.ladder{display:flex;flex-direction:column;align-items:center;gap:0;margin:4px 0 6px}
+.rung{border:1.5px solid var(--line);border-radius:8px;padding:9px 20px;font-weight:700;font-size:14.5px;background:var(--paper)}
+.rung.top{border-color:var(--sage);background:#e9f0ec;color:#4d6b5b}
+.pair{display:flex;gap:12px}
+.stem{width:1.5px;height:20px;background:var(--line)}
+.note{text-align:center;font-size:13px;color:var(--mute);margin-top:12px;line-height:1.6}
+.note b{color:var(--ink)}
+
+/* buttons */
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+button{font-family:inherit;font-size:13px;font-weight:600;color:var(--ink);background:var(--paper);
+  border:1px solid var(--line);border-radius:20px;padding:8px 15px;cursor:pointer;transition:background .15s,color .15s,border-color .15s}
+button:hover{background:#ece1cd}
+button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+button.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+/* term rows */
+.term{display:grid;grid-template-columns:132px 1fr 128px;gap:14px;align-items:center;
+  padding:14px 14px;border:1px solid var(--line);border-radius:9px;margin-bottom:10px;background:var(--paper)}
+.term.locked{background:#e9f0ec;border-color:var(--sage)}
+@media(max-width:640px){.term{grid-template-columns:1fr;gap:8px}}
+.tname{font-weight:700;font-size:14.5px}
+.tname small{display:block;font-weight:400;font-size:11.5px;color:var(--mute);letter-spacing:.04em}
+.subline{font-size:12px;color:var(--mute);margin-bottom:6px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-size:12px;font-weight:600;padding:4px 11px;border-radius:14px;border:1px dashed var(--line);
+  color:var(--mute);background:transparent;transition:all .18s}
+.chip.on{border-style:solid;border-color:var(--ink);background:var(--ink);color:var(--paper)}
+.ssbox{text-align:right}
+.ss{font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:23px;font-weight:700;line-height:1.15;transition:color .2s}
+.fp{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;color:var(--mute)}
+.flag{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;margin-top:5px}
+.flag.move{background:#f7e9e8;color:#a8635e}
+.flag.stay{background:var(--sage);color:#fff}
+
+.punch{border-left:3px solid var(--sage);background:#e9f0ec;padding:13px 15px;border-radius:7px;font-size:14px;line-height:1.6;margin-top:4px}
+table{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:6px}
+th,td{padding:8px 9px;text-align:right;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+th{font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--mute);font-weight:700}
+tr.hl td{background:#e9f0ec;font-weight:700}
+td.num{font-family:ui-monospace,Menlo,monospace}
+.foot{font-size:12.5px;color:var(--mute);margin-top:14px;line-height:1.65}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>ทำไม interaction ถึงได้ SS เท่ากันทั้ง Type I, II, III</h1>
+  <p class="sub">Type I / II / III ต่างกันแค่เรื่องเดียว — <b>ก่อนจะให้คะแนนเทอมนี้ ต้องหักอะไรออกก่อน</b></p>
+
+  <!-- ladder -->
+  <div class="card">
+    <p class="eyebrow">โมเดลเป็นชั้น · A×B อยู่บนสุด</p>
+    <div class="ladder">
+      <div class="rung top">Diet × Exercise &nbsp;(interaction)</div>
+      <div class="stem"></div>
+      <div class="pair"><div class="rung">Diet</div><div class="rung">Exercise</div></div>
+    </div>
+    <p class="note">
+      <b>Diet</b> มี interaction อยู่ <b>ข้างบน</b> → แต่ละ Type ตัดสินใจไม่เหมือนกันว่าจะหักมันออกด้วยไหม → <b>เลขต่างกัน</b><br>
+      <b>Diet × Exercise</b> อยู่บนสุดแล้ว <b>ไม่มีอะไรอยู่เหนือมัน</b> → เหลือให้หักแค่ Diet กับ Exercise → ทุก Type หักเหมือนกัน → <b>เลขเดียวกันเสมอ</b>
+    </p>
+  </div>
+
+  <!-- interactive -->
+  <div class="card">
+    <p class="eyebrow">กดสลับดู · ข้อมูลจริงจาก Example Scenario หน้า 76 (Diet × Exercise, n = 20/30/10/40 — unbalanced)</p>
+    <div class="tabs">
+      <button data-k="I1">Type I · Diet เข้าก่อน</button>
+      <button data-k="I2">Type I · Exercise เข้าก่อน</button>
+      <button data-k="II">Type II</button>
+      <button data-k="III">Type III</button>
+    </div>
+
+    <div class="term" id="r-diet">
+      <div class="tname">Diet<small>main effect</small></div>
+      <div><div class="subline">หักออกก่อน:</div><div class="chips" id="c-diet"></div></div>
+      <div class="ssbox"><div class="ss" id="ss-diet"></div><div class="fp" id="fp-diet"></div><span class="flag move">เลขขยับ</span></div>
+    </div>
+
+    <div class="term" id="r-ex">
+      <div class="tname">Exercise<small>main effect</small></div>
+      <div><div class="subline">หักออกก่อน:</div><div class="chips" id="c-ex"></div></div>
+      <div class="ssbox"><div class="ss" id="ss-ex"></div><div class="fp" id="fp-ex"></div><span class="flag move">เลขขยับ</span></div>
+    </div>
+
+    <div class="term locked" id="r-int">
+      <div class="tname">Diet × Exercise<small>interaction · เทอมบนสุด</small></div>
+      <div><div class="subline">หักออกก่อน:</div><div class="chips" id="c-int"></div></div>
+      <div class="ssbox"><div class="ss" id="ss-int" style="color:#4d6b5b"></div><div class="fp" id="fp-int"></div><span class="flag stay">ไม่ขยับเลย</span></div>
+    </div>
+
+    <p class="punch" style="margin-top:14px">
+      แถวบนสองแถว ชิปเปลี่ยน → เลขเปลี่ยน &nbsp;·&nbsp; แถวล่าง <b>ชิปติดครบทั้งสองอันเสมอ</b> เพราะมันมีให้หักแค่นั้น → เลขจึงนิ่งที่ <b>30.03</b> ทุกแบบ
+    </p>
+  </div>
+
+  <!-- summary table -->
+  <div class="card">
+    <p class="eyebrow">สรุปตัวเลขทั้งสี่แบบ · MSE = 3.095, df = 96</p>
+    <table>
+      <thead><tr><th>เทอม</th><th>Type I<br>Diet ก่อน</th><th>Type I<br>Ex ก่อน</th><th>Type II</th><th>Type III</th></tr></thead>
+      <tbody>
+        <tr><td>Diet</td><td class="num">30.25</td><td class="num">2.15</td><td class="num">2.15</td><td class="num">1.20</td></tr>
+        <tr><td><i>p</i> ของ Diet</td><td class="num" style="color:#a8635e"><b>.0023</b></td><td class="num">.407</td><td class="num">.407</td><td class="num">.535</td></tr>
+        <tr><td>Exercise</td><td class="num">319.78</td><td class="num">347.88</td><td class="num">319.78</td><td class="num">346.59</td></tr>
+        <tr class="hl"><td>Diet × Exercise</td><td class="num">30.03</td><td class="num">30.03</td><td class="num">30.03</td><td class="num">30.03</td></tr>
+      </tbody>
+    </table>
+    <p class="foot">
+      <b>สังเกต:</b> Diet เป็น significant (<i>p</i> = .0023) เฉพาะตอนใส่เข้าโมเดลก่อน — พอสลับลำดับหรือเปลี่ยน Type กลายเป็น <i>p</i> = .41–.54 ทันที <b>ข้อมูลชุดเดียวกัน</b> นี่คือเหตุผลว่าทำไมต้องบอกเสมอว่าใช้ SS แบบไหน<br>
+      <b>ข้อควรระวัง Type III:</b> ต้องใช้ sum-to-zero (effect) coding เท่านั้น ถ้าใช้ dummy/treatment coding ตามค่า default ของ R จะได้ค่าที่ตีความไม่ได้ — JAMOVI ตั้ง Type III + coding ที่ถูกต้องมาให้แล้ว
+    </p>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  var D={
+    I1:{diet:{sub:[],           ss:'30.25',  F:'9.773', p:'.0023'},
+        ex:  {sub:['Diet'],     ss:'319.78', F:'103.32',p:'<.0001'},
+        int: {sub:['Diet','Exercise'], ss:'30.03', F:'9.701', p:'.0024'}},
+    I2:{diet:{sub:['Exercise'], ss:'2.15',   F:'0.694', p:'.407'},
+        ex:  {sub:[],           ss:'347.88', F:'112.40',p:'<.0001'},
+        int: {sub:['Diet','Exercise'], ss:'30.03', F:'9.701', p:'.0024'}},
+    II:{diet:{sub:['Exercise'], ss:'2.15',   F:'0.694', p:'.407'},
+        ex:  {sub:['Diet'],     ss:'319.78', F:'103.32',p:'<.0001'},
+        int: {sub:['Diet','Exercise'], ss:'30.03', F:'9.701', p:'.0024'}},
+    III:{diet:{sub:['Exercise','Diet×Ex'], ss:'1.20', F:'0.388', p:'.535'},
+        ex:  {sub:['Diet','Diet×Ex'],     ss:'346.59',F:'111.98',p:'<.0001'},
+        int: {sub:['Diet','Exercise'],    ss:'30.03', F:'9.701', p:'.0024'}}
+  };
+  var POOL={diet:['Exercise','Diet×Ex'], ex:['Diet','Diet×Ex'], int:['Diet','Exercise']};
+
+  function chips(id,pool,on){
+    var box=document.getElementById(id); box.innerHTML='';
+    if(!on.length){
+      var n=document.createElement('span'); n.className='chip';
+      n.textContent='— ไม่หักอะไรเลย'; box.appendChild(n);
+    }
+    pool.forEach(function(t){
+      var c=document.createElement('span');
+      c.className='chip'+(on.indexOf(t)>-1?' on':'');
+      c.textContent=t; box.appendChild(c);
+    });
+  }
+  function set(k){
+    var d=D[k];
+    ['diet','ex','int'].forEach(function(r){
+      chips('c-'+r,POOL[r],d[r].sub);
+      document.getElementById('ss-'+r).textContent=d[r].ss;
+      document.getElementById('fp-'+r).textContent='F='+d[r].F+'  p='+d[r].p;
+    });
+    document.getElementById('ss-diet').style.color = (d.diet.p==='.0023') ? '#a8635e' : '#5a5246';
+    document.querySelectorAll('.tabs button').forEach(function(b){b.classList.toggle('on',b.dataset.k===k);});
+  }
+  document.querySelectorAll('.tabs button').forEach(function(b){
+    b.addEventListener('click',function(){set(b.dataset.k);});
+  });
+  set('I1');
+})();
+</script>
+</body>
+</html>
