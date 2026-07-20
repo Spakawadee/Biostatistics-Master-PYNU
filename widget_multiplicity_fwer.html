@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Multiplicity &amp; Type I error | Biostat Week 6</title>
+<style>
+  :root{
+    --paper:#f7f4ee; --card:#ffffff; --ink:#1f2421; --ink2:#4a534d; --muted:#5c6660; --line:#d9d2c5;
+    --accent:#2f6f5e;   /* เขียวเข้ม = ควบคุมได้ */
+    --rose:#c0695f;     /* แดงอิฐ = false positive */
+    --rosef:#f1d9d2;
+    --sage:#5e9c7e; --sagef:#e6eee8;
+    --mustard:#cda75a; --mustf:#f3e9d2; --mustd:#9a7320;
+    --blue:#4a6fa5; --bluef:#e1e8f0;
+    --grey:#cdc4b4;
+    --ui:-apple-system,system-ui,"Segoe UI",sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;padding:24px;background:var(--paper);color:var(--ink);
+    font-family:'Georgia','Times New Roman',serif;line-height:1.55;}
+  .wrap{max-width:760px;margin:0 auto;}
+  header{border-bottom:2px solid var(--ink);padding-bottom:12px;margin-bottom:18px;}
+  h1{font-size:1.32rem;margin:0 0 4px;}
+  .sub{color:var(--muted);font-size:.9rem;font-family:var(--ui);}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;
+    padding:18px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+  .lead{font-size:.97rem;margin:0 0 12px;}
+  .lead b{color:var(--accent);}
+
+  .tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;font-family:var(--ui);}
+  .tab{flex:1 1 0;min-width:110px;text-align:center;padding:9px 6px;border:1px solid var(--line);
+    border-radius:8px;background:var(--card);cursor:pointer;font-size:.86rem;color:var(--muted);user-select:none;}
+  .tab.active{border-color:var(--accent);color:var(--accent);font-weight:bold;background:#fafaf7;}
+
+  .slid{font-family:var(--ui);font-size:.9rem;margin:6px 0 4px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+  .slid input[type=range]{flex:1;min-width:170px;accent-color:var(--accent);}
+  .nval{font-weight:bold;color:var(--accent);min-width:150px;font-variant-numeric:tabular-nums;}
+
+  .strat{display:flex;gap:6px;flex-wrap:wrap;font-family:var(--ui);margin:12px 0 4px;}
+  .strat button{flex:1 1 0;min-width:118px;font-family:var(--ui);font-size:.82rem;cursor:pointer;
+    border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:8px;padding:7px 8px;}
+  .strat button.on{border-color:var(--accent);color:var(--accent);font-weight:bold;background:#fafaf7;}
+
+  .plabel{font-family:var(--ui);font-size:.84rem;color:var(--ink);font-weight:bold;margin:14px 0 2px;}
+  .plabel small{font-weight:normal;color:var(--muted);}
+  svg{display:block;margin:4px auto;max-width:100%;height:auto;}
+
+  .stats{display:flex;gap:10px;flex-wrap:wrap;font-family:var(--ui);margin-top:14px;}
+  .pill{flex:1;min-width:104px;text-align:center;border:1px solid var(--line);border-radius:8px;padding:9px 6px;background:var(--paper);}
+  .pill .v{font-size:1.12rem;font-weight:bold;display:block;color:var(--accent);font-variant-numeric:tabular-nums;}
+  .pill .v.bad{color:var(--rose);}
+  .pill .l{font-size:.72rem;color:var(--muted);}
+
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+  button.act{font-family:var(--ui);font-size:.86rem;font-weight:bold;cursor:pointer;
+    border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:8px;padding:9px 14px;}
+  button.act:disabled{opacity:.45;cursor:default;}
+  button.ghost{font-family:var(--ui);font-size:.86rem;cursor:pointer;
+    border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:8px;padding:9px 14px;}
+  button.ghost:disabled{opacity:.4;cursor:default;}
+  .note{font-family:var(--ui);font-size:.84rem;color:var(--muted);margin-top:12px;}
+  .note b{color:var(--ink2);}
+  .legend{font-family:var(--ui);font-size:.78rem;color:var(--muted);display:flex;gap:16px;flex-wrap:wrap;margin-top:6px;justify-content:center;}
+  .legend i{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:5px;vertical-align:middle;}
+
+  /* ---------- practice engine ---------- */
+  .barrow{display:flex;align-items:center;gap:12px;margin-bottom:14px;font-size:.85rem;color:var(--muted);font-family:var(--ui);}
+  .prog{flex:1;height:9px;background:#e7dcc6;border-radius:6px;overflow:hidden;}
+  .prog>div{height:100%;width:0;background:var(--sage);transition:width .3s;}
+  .tag{display:inline-block;font-size:.75rem;font-family:var(--ui);color:var(--mustd);background:var(--mustf);
+    border:1px solid var(--mustard);border-radius:20px;padding:2px 10px;margin-bottom:10px;}
+  .scenario{font-size:.98rem;margin:0 0 10px;}
+  .qtext{font-weight:bold;font-size:.98rem;margin:12px 0 10px;}
+  .inrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0;}
+  input[type=number]{font-family:inherit;font-size:1rem;padding:8px 10px;border:1.5px solid var(--line);
+    border-radius:9px;width:150px;background:#fff;color:var(--ink);}
+  .mcq{display:flex;flex-direction:column;gap:8px;margin:8px 0;}
+  .mcq button{text-align:left;font-family:inherit;font-size:.95rem;padding:10px 12px;border:1.5px solid var(--line);
+    border-radius:10px;background:#fff;color:var(--ink);cursor:pointer;}
+  .mcq button:hover{border-color:var(--sage);}
+  .mcq button.sel{border-color:var(--blue);background:var(--bluef);}
+  .hints{margin:10px 0 0;padding:0;list-style:none;}
+  .hints li{background:var(--mustf);border-left:3px solid var(--mustard);border-radius:6px;
+    padding:8px 11px;margin:6px 0;font-size:.9rem;color:var(--ink);}
+  .hints li code{background:#fff;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:.86rem;}
+  .fb{margin:12px 0 0;padding:11px 13px;border-radius:10px;font-size:.92rem;display:none;}
+  .fb.ok{background:var(--sagef);border:1.5px solid var(--sage);color:#33604a;display:block;}
+  .fb.no{background:var(--rosef);border:1.5px solid var(--rose);color:#8c3b32;display:block;}
+  .foot{display:flex;justify-content:space-between;align-items:center;margin-top:14px;gap:10px;flex-wrap:wrap;}
+  .end{text-align:center;padding:26px 18px;}
+  .end .score{font-size:2.2rem;color:var(--sage);font-weight:bold;}
+  .dot{color:var(--muted);}
+
+  @media (max-width:600px){
+    body{padding:16px 12px;} h1{font-size:1.16rem;} .card{padding:14px;}
+    .pill{min-width:46%;} .tab{min-width:44%;} .strat button{min-width:46%;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>หลายคู่ = หลายโอกาสพลาด</h1>
+    <div class="sub">Biostat สัปดาห์ที่ 6 · multiplicity, familywise error rate และเหตุผลที่ ANOVA คุม Type I error ไว้ได้</div>
+  </header>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="explore">สำรวจ</div>
+    <div class="tab" data-tab="practice">ฝึก (7 ข้อ)</div>
+  </div>
+
+  <!-- ================= EXPLORE ================= -->
+  <div id="explore">
+    <div class="card">
+      <p class="lead">ในหน้านี้ <b>ยาไม่ได้ผลจริง</b> — ทุกกลุ่มถูกสุ่มจากประชากรเดียวกัน (H₀ เป็นจริงทุกคู่)
+        ทุกผลที่ออกมา &ldquo;significant&rdquo; จึงเป็น <b style="color:var(--rose)">false positive</b> ทั้งหมด<br>
+        ทายก่อนลาก: ถ้าเพิ่มจาก 3 กลุ่มเป็น 6 กลุ่ม โอกาสที่การศึกษาหนึ่งเรื่องจะเจอผลบวกลวง<b>อย่างน้อย 1 คู่</b> จะเปลี่ยนไปแค่ไหน?</p>
+
+      <div class="slid">
+        <span>จำนวนกลุ่ม k <small style="color:var(--muted)">(พิมพ์ได้ 2–8)</small></span>
+        <input type="number" id="knum" min="2" max="8" step="1" value="4" style="width:84px">
+        <span class="nval" id="kval"></span>
+      </div>
+
+      <div class="plabel">คู่ที่ถูกเปรียบเทียบ <small>— แต่ละช่อง = การทดสอบ 1 ครั้ง = 1 โอกาสพลาด</small></div>
+      <div id="matrix"></div>
+
+      <div class="plabel">วิธีวิเคราะห์ <small>— เปลี่ยนวิธี โดยใช้ &ldquo;การศึกษาชุดเดิม&rdquo;</small></div>
+      <div class="strat" id="strat">
+        <button data-s="unadj" class="on">t ทุกคู่ (ไม่ปรับ)</button>
+        <button data-s="bonf">Bonferroni</button>
+        <button data-s="tukey">Tukey HSD</button>
+        <button data-s="anova">ANOVA F อย่างเดียว</button>
+      </div>
+
+      <div class="plabel">การศึกษาจำลอง <small>— 1 จุด = งานวิจัย 1 เรื่อง (n = 20 ต่อกลุ่ม, α = 0.05)</small></div>
+      <div id="dots"></div>
+      <div class="legend">
+        <span><i style="background:var(--rose)"></i>เจอ &ldquo;ผลบวก&rdquo; อย่างน้อย 1 คู่ (พลาด)</span>
+        <span><i style="background:var(--sage)"></i>ไม่เจออะไรเลย (ถูกต้อง)</span>
+      </div>
+
+      <div class="stats">
+        <div class="pill"><span class="v" id="p_m">—</span><span class="l">จำนวนคู่ที่เทียบ (m)</span></div>
+        <div class="pill"><span class="v" id="p_form">—</span><span class="l">สูตร 1−(1−α)<sup>m</sup></span></div>
+        <div class="pill"><span class="v" id="p_live">—</span><span class="l">จำลองได้จริง (สะสม)</span></div>
+        <div class="pill"><span class="v" id="p_ref">—</span><span class="l">ค่าจริงระยะยาว</span></div>
+      </div>
+
+      <div class="btns">
+        <button class="act" id="run">จำลอง 200 การศึกษา</button>
+        <button class="ghost" id="run5">+1,000</button>
+        <button class="ghost" id="clear">ล้าง</button>
+      </div>
+
+      <p class="note" id="verdict"></p>
+    </div>
+
+    <div class="card">
+      <p class="note" style="margin-top:0">
+        <b>อ่านตัวเลขให้ออก</b> &mdash;
+        &ldquo;สูตร&rdquo; สมมติว่า t-test แต่ละคู่เป็นอิสระต่อกัน ซึ่ง<b>ไม่จริง</b> (คู่ A–B กับ A–C ใช้ข้อมูลกลุ่ม A ร่วมกัน)
+        ค่าจริงจึงต่ำกว่าสูตรเสมอ &mdash; แต่ยังเฟ้อขึ้นเรื่อย ๆ ตาม k อยู่ดี<br><br>
+        <b>สิ่งที่ควรสังเกต</b> &mdash;
+        (1) ที่ k = 2 ทั้งสี่วิธีให้ผลเท่ากันหมด เพราะมีการเปรียบเทียบเดียว &mdash; ไม่มี multiplicity ให้เฟ้อ ·
+        (2) ANOVA F ค้างที่ ~5% ทุกค่า k เพราะมัน<b>ตัดสินใจครั้งเดียว</b> ไม่ใช่เพราะมันเก่งกว่า ·
+        (3) Bonferroni ลงต่ำกว่า 5% (อนุรักษ์นิยมเกิน &rarr; เสีย power) ส่วน Tukey ตรง 5% พอดี เพราะออกแบบมาสำหรับ all-pairwise โดยเฉพาะ<br><br>
+        <b>ทำไมเลข &ldquo;จำลองได้จริง&rdquo; ถึงไม่นิ่ง</b> &mdash;
+        200 การศึกษายังน้อย ค่าจะแกว่งรอบ ๆ ค่าจริงประมาณ &plusmn;3% กด <b>+1,000</b> ซ้ำ ๆ แล้วดูมันลู่เข้าหาค่าในช่องขวาสุด
+        &mdash; นี่คือ sampling variability ตัวเดียวกับที่เราคุยกันในสัปดาห์ที่ 2<br><br>
+        <b>ตัวเลขทั้งหมดในหน้านี้</b> คำนวณสดในเบราว์เซอร์ (n = 20 ต่อกลุ่ม, ข้อมูลสุ่มจาก N(0,1) ทุกกลุ่ม)
+        ค่าวิกฤต t*, q* (studentized range), F* และค่าอ้างอิงระยะยาว ตรวจสอบด้วย scipy แล้ว
+      </p>
+    </div>
+  </div>
+
+  <!-- ================= PRACTICE ================= -->
+  <div id="practice" style="display:none">
+    <div class="barrow">
+      <span id="counter">ข้อ 1 / 7</span>
+      <div class="prog"><div id="progfill"></div></div>
+      <span id="score">คะแนน 0</span>
+    </div>
+    <div id="stage"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* =========================================================================
+   ค่าคงที่ทั้งหมดคำนวณและตรวจสอบด้วย scipy (n = 20 ต่อกลุ่ม, α = 0.05)
+   tcrit  = t.ppf(0.975, 38)                     [pairwise 2 กลุ่ม]
+   tbonf  = t.ppf(1-α/(2m), 38)                  [Bonferroni]
+   q      = studentized_range.ppf(0.95, k, dfE)  [Tukey HSD]
+   fcrit  = f.ppf(0.95, k-1, dfE),  dfE = k(n-1)
+   ref    = FWER ระยะยาวจาก simulation 400,000 รอบ (SE < 0.001)
+   ========================================================================= */
+var K = {
+  n:20, alpha:0.05, tcrit:2.024394,
+  m:     {2:1,  3:3,  4:6,  5:10, 6:15, 7:21, 8:28},
+  dfE:   {2:38, 3:57, 4:76, 5:95, 6:114,7:133,8:152},
+  tbonf: {2:2.024394,3:2.504575,4:2.783528,5:2.980266,6:3.132212,7:3.255807,8:3.359902},
+  q:     {2:2.862930,3:3.403188,4:3.714886,5:3.932705,6:4.099495,7:4.234105,8:4.346753},
+  fcrit: {2:4.098172,3:3.158843,4:2.724944,5:2.467494,6:2.293856,7:2.167356,8:2.070251},
+  ref:{
+    2:{unadj:0.0504,bonf:0.0504,tukey:0.0504,anova:0.0504},
+    3:{unadj:0.1221,bonf:0.0440,tukey:0.0498,anova:0.0500},
+    4:{unadj:0.2043,bonf:0.0418,tukey:0.0502,anova:0.0500},
+    5:{unadj:0.2864,bonf:0.0403,tukey:0.0500,anova:0.0505},
+    6:{unadj:0.3669,bonf:0.0397,tukey:0.0505,anova:0.0506},
+    7:{unadj:0.4419,bonf:0.0386,tukey:0.0506,anova:0.0504},
+    8:{unadj:0.5090,bonf:0.0378,tukey:0.0496,anova:0.0498}
+  }
+};
+var LABEL={unadj:"t ทุกคู่ (ไม่ปรับ)",bonf:"Bonferroni",tukey:"Tukey HSD",anova:"ANOVA F อย่างเดียว"};
+
+function el(id){ return document.getElementById(id); }
+function pct(x){ return (100*x).toFixed(1)+"%"; }
+
+/* ---------------- tabs ---------------- */
+document.querySelectorAll(".tab").forEach(function(t){
+  t.onclick=function(){
+    document.querySelectorAll(".tab").forEach(function(x){x.classList.remove("active");});
+    t.classList.add("active");
+    var which=t.getAttribute("data-tab");
+    el("explore").style.display = which==="explore"?"block":"none";
+    el("practice").style.display= which==="practice"?"block":"none";
+  };
+});
+
+/* ================= EXPLORE ================= */
+var k=4, strat="unadj", studies=[], cum={n:0,unadj:0,bonf:0,tukey:0,anova:0};
+
+/* normal deviates — Box–Muller with cache */
+var spare=null;
+function randn(){
+  if(spare!==null){ var s=spare; spare=null; return s; }
+  var u,v,r;
+  do{ u=2*Math.random()-1; v=2*Math.random()-1; r=u*u+v*v; }while(r===0||r>=1);
+  var f=Math.sqrt(-2*Math.log(r)/r);
+  spare=v*f; return u*f;
+}
+
+/* one simulated study: k groups of n, ALL from N(0,1) → H₀ true everywhere */
+function runStudy(kk){
+  var n=K.n, mu=[], s2=[], g, i;
+  for(g=0; g<kk; g++){
+    var v=new Array(n), sum=0;
+    for(i=0;i<n;i++){ v[i]=randn(); sum+=v[i]; }
+    var m=sum/n, sq=0;
+    for(i=0;i<n;i++){ var d=v[i]-m; sq+=d*d; }
+    mu.push(m); s2.push(sq/(n-1));
+  }
+  var mse=0, grand=0;
+  for(g=0;g<kk;g++){ mse+=s2[g]; grand+=mu[g]; }
+  mse/=kk; grand/=kk;
+  var ssb=0; for(g=0;g<kk;g++) ssb+=(mu[g]-grand)*(mu[g]-grand);
+  var F=(K.n*ssb/(kk-1))/mse;
+
+  var r={anova:F>K.fcrit[kk], unadj:false, bonf:false, tukey:false};
+  for(var a=0;a<kk;a++) for(var b=a+1;b<kk;b++){
+    var diff=Math.abs(mu[a]-mu[b]);
+    var t=diff/Math.sqrt((s2[a]+s2[b])/2*2/n);
+    if(t>K.tcrit)      r.unadj=true;
+    if(t>K.tbonf[kk])  r.bonf=true;
+    if(diff/Math.sqrt(mse/n) > K.q[kk]) r.tukey=true;
+  }
+  return r;
+}
+
+function addStudies(count){
+  for(var i=0;i<count;i++){
+    var r=runStudy(k);
+    studies.push(r);
+    cum.n++; if(r.unadj)cum.unadj++; if(r.bonf)cum.bonf++; if(r.tukey)cum.tukey++; if(r.anova)cum.anova++;
+  }
+  if(studies.length>200) studies=studies.slice(-200);
+  draw();
+}
+
+/* ---- triangular matrix of pairs ---- */
+function drawMatrix(){
+  var names="ABCDEFGH".split(""), cell=30, pad=26;
+  var W=pad+(k-1)*cell+10, H=pad+(k-1)*cell+10;
+  var s='<svg viewBox="0 0 '+Math.max(W,150)+' '+Math.max(H,80)+'" width="'+Math.max(W,150)+'" xmlns="http://www.w3.org/2000/svg">';
+  for(var j=1;j<k;j++)
+    s+='<text x="'+(pad+(j-1)*cell+cell/2)+'" y="16" font-size="12" fill="#5c6660" text-anchor="middle" font-family="Georgia,serif">'+names[j]+'</text>';
+  for(var i=0;i<k-1;i++){
+    s+='<text x="'+(pad-8)+'" y="'+(pad+i*cell+cell/2+4)+'" font-size="12" fill="#5c6660" text-anchor="end" font-family="Georgia,serif">'+names[i]+'</text>';
+    for(var jj=1;jj<k;jj++){
+      if(jj<=i) continue;
+      s+='<rect x="'+(pad+(jj-1)*cell)+'" y="'+(pad+i*cell)+'" width="'+(cell-4)+'" height="'+(cell-4)+
+         '" rx="4" fill="#f1d9d2" stroke="#c0695f" stroke-width="1.1"/>';
+    }
+  }
+  s+='</svg>';
+  el("matrix").innerHTML=s;
+}
+
+/* ---- dot grid: 1 dot = 1 study ---- */
+function drawDots(){
+  var per=25, r=5.2, gap=20, padL=8, padT=8;
+  var rows=8, W=padL*2+per*gap, H=padT*2+rows*gap;
+  var s='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">';
+  for(var i=0;i<200;i++){
+    var cx=padL+(i%per)*gap+gap/2, cy=padT+Math.floor(i/per)*gap+gap/2;
+    if(i<studies.length){
+      var hit=studies[i][strat];
+      s+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="'+(hit?"#c0695f":"#5e9c7e")+
+         '" fill-opacity="'+(hit?1:0.9)+'" stroke="'+(hit?"#a04b41":"#4a7d63")+'" stroke-width="0.8"/>';
+    } else {
+      s+='<circle cx="'+cx+'" cy="'+cy+'" r="'+(r-1.4)+'" fill="none" stroke="#e2dbcd" stroke-width="1"/>';
+    }
+  }
+  s+='</svg>';
+  el("dots").innerHTML=s;
+}
+
+function draw(){
+  el("kval").textContent=k+" กลุ่ม → "+K.m[k]+" คู่";
+  drawMatrix(); drawDots();
+
+  var form=1-Math.pow(1-K.alpha,K.m[k]);
+  var live=cum.n?cum[strat]/cum.n:null;
+  var refv=K.ref[k][strat];
+
+  el("p_m").textContent=K.m[k];
+  el("p_form").textContent=pct(form);
+  el("p_form").className="v"+(form>0.08?" bad":"");
+  el("p_live").textContent=live===null?"—":pct(live);
+  el("p_live").className="v"+(live!==null&&live>0.08?" bad":"");
+  el("p_ref").textContent=pct(refv);
+  el("p_ref").className="v"+(refv>0.08?" bad":"");
+
+  var msg;
+  if(strat==="anova")
+    msg="<b>ANOVA F อย่างเดียว:</b> ทดสอบ H₀: μ₁ = … = μ<sub>k</sub> เพียงข้อเดียว → ตัดสินใจ 1 ครั้ง → error rate ค้างที่ α = 5% ทุกค่า k. ราคาที่จ่ายคือมันไม่บอกว่า<i>คู่ไหน</i>ต่างกัน.";
+  else if(strat==="bonf")
+    msg="<b>Bonferroni:</b> ใช้เกณฑ์ α/m ต่อคู่ (ที่ k = "+k+" คือ α* = "+(K.alpha/K.m[k]).toFixed(5)+"). คุมได้จริง แต่<b>ต่ำกว่า</b> 5% → อนุรักษ์นิยมเกิน จึงเสีย power.";
+  else if(strat==="tukey")
+    msg="<b>Tukey HSD:</b> ใช้การแจกแจง studentized range ที่คิดเผื่อว่าเราหยิบ<i>คู่ที่ห่างที่สุด</i>มาดู → ลงตัวที่ ~5% พอดีทุกค่า k. ใช้ได้เมื่อความแปรปรวนเท่ากัน; ถ้าไม่เท่า ให้ใช้ Games-Howell.";
+  else
+    msg = K.m[k]===1
+      ? "<b>t ทุกคู่:</b> ที่ k = 2 มีคู่เดียว → ไม่มี multiplicity → 5% ตามที่ตั้งใจไว้. ลองเลื่อน k ขึ้นดู."
+      : "<b>t ทุกคู่ (ไม่ปรับ):</b> "+K.m[k]+" การทดสอบ = "+K.m[k]+" โอกาสพลาด ทั้งที่ยาไม่ได้ผลเลยสักตัว → "+pct(refv)+" ของงานวิจัยจะรายงาน &ldquo;ผลที่มีนัยสำคัญ&rdquo; อย่างน้อย 1 คู่.";
+  el("verdict").innerHTML=msg+(cum.n?" <span style='color:var(--muted)'>(จำลองสะสม "+cum.n.toLocaleString()+" การศึกษา)</span>":"");
+}
+
+function setK(val){
+  val=parseInt(val,10);
+  if(isNaN(val)) return false;
+  if(val<2) val=2; if(val>8) val=8;
+  k=val; studies=[]; cum={n:0,unadj:0,bonf:0,tukey:0,anova:0}; draw(); return true;
+}
+el("knum").oninput=function(){
+  var v=parseInt(this.value,10);
+  if(!isNaN(v)&&v>=2&&v<=8) setK(v);   // อัปเดตทันทีเมื่อค่าอยู่ในช่วง 2–8
+};
+el("knum").onchange=function(){ setK(this.value); this.value=k; };  // ปรับค่าให้อยู่ในช่วงเมื่อออกจากช่อง
+el("strat").onclick=function(e){
+  var b=e.target.closest("button"); if(!b) return;
+  document.querySelectorAll("#strat button").forEach(function(x){x.classList.remove("on");});
+  b.classList.add("on"); strat=b.getAttribute("data-s"); draw();
+};
+el("run").onclick =function(){ addStudies(200); };
+el("run5").onclick=function(){ addStudies(1000); };
+el("clear").onclick=function(){ studies=[]; cum={n:0,unadj:0,bonf:0,tukey:0,anova:0}; draw(); };
+draw();
+
+/* ================= PRACTICE ================= */
+function svgPairs(kk){
+  var names="ABCDEFGH".split(""), cell=26, pad=22;
+  var W=pad+(kk-1)*cell+8, H=pad+(kk-1)*cell+8;
+  var s='<svg viewBox="0 0 '+W+' '+H+'" width="'+W+'" xmlns="http://www.w3.org/2000/svg">';
+  for(var j=1;j<kk;j++) s+='<text x="'+(pad+(j-1)*cell+cell/2)+'" y="14" font-size="11" fill="#5c6660" text-anchor="middle">'+names[j]+'</text>';
+  for(var i=0;i<kk-1;i++){
+    s+='<text x="'+(pad-7)+'" y="'+(pad+i*cell+cell/2+4)+'" font-size="11" fill="#5c6660" text-anchor="end">'+names[i]+'</text>';
+    for(var jj=i+1;jj<kk;jj++)
+      s+='<rect x="'+(pad+(jj-1)*cell)+'" y="'+(pad+i*cell)+'" width="'+(cell-4)+'" height="'+(cell-4)+'" rx="3" fill="#f1d9d2" stroke="#c0695f" stroke-width="1"/>';
+  }
+  return s+'</svg>';
+}
+function svgTwoBars(a,b,la,lb){
+  var W=320,H=140,base=112,padL=40,bw=76,gap=54,max=0.55;
+  function h(v){ return v/max*(base-16); }
+  var s='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">';
+  var ty=base-h(0.05);
+  s+='<line x1="'+(padL-6)+'" y1="'+ty+'" x2="'+(W-10)+'" y2="'+ty+'" stroke="#5e9c7e" stroke-width="1.2" stroke-dasharray="5 3"/>';
+  s+='<text x="'+(W-12)+'" y="'+(ty-4)+'" fill="#5e9c7e" font-size="10.5" text-anchor="end">α = 5% ที่ตั้งใจไว้</text>';
+  s+='<line x1="'+padL+'" y1="'+base+'" x2="'+(W-10)+'" y2="'+base+'" stroke="#5c6660" stroke-width="1"/>';
+  var vals=[{v:a,l:la,c:"#e7cfc8",e:"#c0695f"},{v:b,l:lb,c:"#f1d9d2",e:"#c0695f"}];
+  for(var i=0;i<2;i++){
+    var x=padL+i*(bw+gap), hh=h(vals[i].v), y=base-hh;
+    s+='<rect x="'+x+'" y="'+y.toFixed(1)+'" width="'+bw+'" height="'+hh.toFixed(1)+'" rx="4" fill="'+vals[i].c+'" stroke="'+vals[i].e+'" stroke-width="1.3"/>';
+    s+='<text x="'+(x+bw/2)+'" y="'+(y-6).toFixed(1)+'" fill="'+vals[i].e+'" font-size="12.5" text-anchor="middle" font-weight="bold">'+(100*vals[i].v).toFixed(1)+'%</text>';
+    s+='<text x="'+(x+bw/2)+'" y="'+(base+16)+'" fill="#1f2421" font-size="11.5" text-anchor="middle">'+vals[i].l+'</text>';
+  }
+  return s+'</svg>';
+}
+
+var ITEMS=[
+ {
+  tag:"นับจำนวนการทดสอบ",
+  scenario:"RCT 4 แขน เปรียบเทียบสารสกัดสมุนไพรมาตรฐาน 3 ขนาด (150 / 300 / 600 mg) กับ <b>placebo</b> ผลลัพธ์คือการลดลงของ <b>HbA1c (%)</b> ที่ 12 สัปดาห์ ทีมวิจัยรายงาน independent t-test <b>ทุกคู่ โดยไม่ปรับค่า</b>",
+  svg:svgPairs(4),
+  qtext:"มีการเปรียบเทียบทั้งหมดกี่คู่",
+  type:"numeric", answer:6, tol:0.4, ph:"เช่น 3",
+  hints:[
+    "pairwise comparison = เลือก 2 กลุ่มจาก k กลุ่ม โดยไม่สนลำดับ (A vs B เท่ากับ B vs A)",
+    "Excel: <code>=COMBIN(k,2)</code>",
+    "กฎ: m = k(k−1)/2 — แทน k จากโจทย์ (นับ placebo เป็นกลุ่มด้วย)",
+    "เฉลย: m = <b>6</b> คู่"
+  ],
+  explain:"k = 4 → m = 4×3/2 = 6 คู่. จำนวนคู่โตแบบกำลังสอง ไม่ใช่เชิงเส้น: k=5 → 10, k=6 → 15, k=8 → 28. เพิ่มอีก 1 แขน จึงเพิ่มการทดสอบทีละหลายรายการ"
+ },
+ {
+  tag:"สูตรในตำรา",
+  scenario:"สมมติว่าจริง ๆ แล้ว <b>ยาไม่ได้ผลเลยสักขนาด</b> — H₀ เป็นจริงทุกคู่ ทีมยังคงทดสอบทั้ง 6 คู่ที่ α = 0.05",
+  qtext:"ถ้าคิดแบบที่สมมติว่าการทดสอบแต่ละคู่เป็นอิสระต่อกัน โอกาสที่การศึกษานี้จะได้ผล “significant” อย่างน้อย 1 คู่ เท่ากับเท่าใด (ตอบเป็น % ทศนิยม 1 ตำแหน่ง)",
+  type:"numeric", answer:26.5, tol:0.7, ph:"เช่น 14.3",
+  hints:[
+    "ตรงเข้าหาคำตอบยาก — คิดกลับด้าน: หาโอกาสที่ “รอดครบทุกคู่ ไม่พลาดเลย” ก่อน",
+    "Excel: <code>=1-(1-0.05)^m</code>",
+    "กฎ: โอกาสรอด 1 คู่ = 1−α ; รอดครบ m คู่ = (1−α)^m ; ที่เหลือคือโอกาสพลาดอย่างน้อยหนึ่ง — m มาจากข้อที่แล้ว",
+    "เฉลย: 1 − 0.95⁶ = 0.2649 → <b>26.5%</b>"
+  ],
+  explain:"1 − 0.95⁶ = 26.5%. เทียบกับ k=3 ได้ 14.3% และ k=6 ได้ 53.7%. ค่านี้เรียกว่า familywise error rate (FWER) — ต่างจาก α ต่อคู่ ที่ยังเป็น 5% เท่าเดิม"
+ },
+ {
+  tag:"สูตรกับความจริง",
+  scenario:"เมื่อจำลอง RCT 4 แขนนี้ซ้ำ 400,000 ครั้งภายใต้ H₀ จริงทุกคู่ สัดส่วนการศึกษาที่เจอผลบวกลวงอย่างน้อย 1 คู่ ออกมา <b>20.4%</b> ไม่ใช่ 26.5% ตามสูตร",
+  svg:svgTwoBars(0.2649,0.2043,"สูตร","จำลองจริง"),
+  qtext:"อะไรอธิบายช่องว่างนี้ได้ดีที่สุด",
+  type:"mcq",
+  options:[
+    "จำนวนรอบจำลองยังน้อยเกินไป ถ้าเพิ่มรอบค่าจะขึ้นไปหา 26.5%",
+    "t-test ทุกคู่ใช้ข้อมูลกลุ่มเดียวกันซ้ำ จึงไม่เป็นอิสระต่อกันอย่างที่สูตรสมมติ",
+    "t-test อนุรักษ์นิยมกว่า z-test เพราะหางหนากว่า",
+    "n = 20 ต่อกลุ่ม ยังน้อยเกินไปสำหรับ normal approximation"
+  ],
+  answerIdx:1,
+  hints:[
+    "สูตร 1−(1−α)^m ตั้งอยู่บนสมมติฐานสำคัญข้อหนึ่ง — ระบุให้ได้ก่อนว่าสมมติฐานนั้นคืออะไร",
+    "ลองไล่ดูว่าคู่ A–B, A–C และ A–D ใช้ข้อมูลชุดใดร่วมกันบ้าง",
+    "เมื่อการทดสอบมีความสัมพันธ์กันเชิงบวก ผลบวกลวงมักเกิด “เกาะกลุ่ม” ในการศึกษาเดียวกัน แทนที่จะกระจายไปคนละเรื่อง — ลองคิดว่าสิ่งนี้ทำให้สัดส่วนการศึกษาที่พลาด<b>อย่างน้อยหนึ่ง</b>คู่ มากขึ้นหรือน้อยลง",
+    "เฉลย: ข้อ 2 — <b>การทดสอบไม่เป็นอิสระต่อกัน</b> สูตรจึงให้ค่าสูงเกินจริง"
+  ],
+  explain:"ทุกคู่ที่มีกลุ่ม A อยู่ด้วยใช้ค่าเฉลี่ยของ A ตัวเดียวกัน → ถ้า A บังเอิญสูงผิดปกติ หลายคู่จะพลาดพร้อมกันในการศึกษาเดียว (เกาะกลุ่ม) จำนวน<i>การศึกษา</i>ที่พลาดจึงน้อยกว่าที่สูตรทำนาย. สรุป: สูตรเป็นค่าประมาณด้านสูง — แต่ 20.4% ก็ยังเฟ้อกว่า 5% อยู่ 4 เท่า"
+ },
+ {
+  tag:"ANOVA บอกอะไร",
+  scenario:"ทีมเปลี่ยนมาใช้ <b>one-way ANOVA</b> กับข้อมูลชุดเดิม ได้ F(3, 76) = 3.05, p = 0.034",
+  qtext:"ผลนี้สรุปอะไรได้",
+  type:"mcq",
+  options:[
+    "ทุกขนาดยาต่างจาก placebo อย่างมีนัยสำคัญ",
+    "มีอย่างน้อย 1 คู่ที่ค่าเฉลี่ยต่างกัน แต่ผลนี้ยังไม่บอกว่าคู่ไหน",
+    "ขนาด 600 mg ให้ผลดีที่สุด เพราะเป็นขนาดสูงสุด",
+    "สรุปอะไรไม่ได้ เพราะ ANOVA ใช้กับ 2 กลุ่มเท่านั้น"
+  ],
+  answerIdx:1,
+  hints:[
+    "เริ่มจากเขียน H₀ ของ ANOVA ออกมาให้ครบ แล้วถามว่า “การปฏิเสธ H₀ ข้อนี้ แปลว่าอะไรบ้าง”",
+    "H₀: μ₁ = μ₂ = μ₃ = μ₄ (ข้อเดียว) ; H₁: มีอย่างน้อยหนึ่งคู่ที่ไม่เท่า",
+    "กฎ: การปฏิเสธข้อความ “เท่ากันหมด” ให้ข้อมูลแค่ว่า “ไม่ได้เท่ากันหมด” — ไม่ได้ระบุตำแหน่ง",
+    "เฉลย: ข้อ 2 — <b>omnibus test</b> บอกว่ามีความต่างอยู่ แต่ไม่บอกว่าอยู่ตรงไหน"
+  ],
+  explain:"นี่คือหัวใจของเรื่อง: ANOVA คุม Type I error ไว้ที่ 5% ได้ ก็เพราะมันตัดสินใจ <b>ครั้งเดียว</b> กับ H₀ รวมข้อเดียว ไม่ใช่เพราะสถิติ F วิเศษกว่า t. ราคาที่จ่ายคือได้ข้อมูล<i>น้อยกว่า</i> — ต้องทำ post-hoc ต่อจึงจะรู้ว่าคู่ไหน"
+ },
+ {
+  tag:"“ANOVA sig แล้วปลอดภัย” จริงไหม",
+  scenario:"เมื่อ ANOVA ออกมา sig (p = 0.034) ทีมจึงทำ t-test ทุกคู่ทั้ง 6 คู่ต่อ <b>โดยไม่ปรับค่า</b> พร้อมให้เหตุผลว่า “ANOVA ที่ significant แล้วทำหน้าที่เป็นด่านป้องกันให้อยู่แล้ว”",
+  qtext:"ขั้นตอน post-hoc แบบนี้คุม FWER ไว้ที่ 5% ได้หรือไม่",
+  type:"mcq",
+  options:[
+    "ได้ — ANOVA ที่ sig เป็นด่านป้องกันที่เพียงพอเสมอ",
+    "ไม่ได้ — วิธีนี้คุม FWER ได้เฉพาะเมื่อ k = 3 เท่านั้น",
+    "ไม่ได้ — วิธีนี้ใช้ไม่ได้เลยไม่ว่า k จะเท่าไร",
+    "ได้ ถ้า n ต่อกลุ่ม ≥ 30"
+  ],
+  answerIdx:1,
+  hints:[
+    "ลองนึกสถานการณ์: ขนาด 600 mg ได้ผลจริง แต่ 150 mg, 300 mg และ placebo เหมือนกันหมด — ถามว่า ANOVA จะ sig ไหม",
+    "ในสถานการณ์นั้น F จะ sig เกือบทุกครั้งจาก 600 mg เพียงกลุ่มเดียว → นับดูว่ายังเหลือคู่ที่ H₀ เป็นจริงอยู่กี่คู่ แล้วคู่เหล่านั้นถูกทดสอบที่ระดับใด",
+    "กฎ: “ด่าน” จะกรองได้ก็ต่อเมื่อมันมีโอกาสไม่ผ่าน — ถ้าเหลือคู่ที่ H₀ จริงมากกว่าหนึ่งคู่ multiplicity ก็กลับมาทันที",
+    "เฉลย: ข้อ 2 — นี่คือ <b>Fisher’s LSD</b> ซึ่งคุม FWER ได้เฉพาะที่ k = 3"
+  ],
+  explain:"จำลองภายใต้ partial null (กลุ่มสุดท้ายต่างจริง 3 SD, ที่เหลือเหมือนกันหมด, n=20): k=3 → FWER 5.0% ✓ แต่ k=4 → 12.3% ✗ และ k=5 → 20.4% ✗ เพราะ F sig เกือบ 100% ของเวลา ด่านจึงไม่ได้กรองอะไร. ที่ k=3 รอดเพราะเหลือคู่ที่ H₀ จริงเพียงคู่เดียว — ไม่มี multiplicity ให้เฟ้อ"
+ },
+ {
+  tag:"เพิ่ม n ช่วยไหม",
+  scenario:"reviewer เสนอว่า “ให้เพิ่ม n จาก 20 เป็น 60 ต่อกลุ่ม จะได้ลดโอกาสเจอผลบวกลวงจากการเทียบทั้ง 6 คู่”",
+  qtext:"ข้อเสนอนี้แก้ปัญหา multiplicity ได้หรือไม่",
+  type:"mcq",
+  options:[
+    "ได้ — n มากขึ้นทำให้ค่าประมาณแม่นขึ้น FWER จึงลดลง",
+    "ไม่ได้ — n เพิ่ม power (ลด Type II error) แต่ Type I error rate ต่อคู่ยังคงเป็น α เท่าเดิม",
+    "ได้ ถ้า n ≥ 30 ต่อกลุ่ม เพราะเข้าเงื่อนไข CLT แล้ว",
+    "ไม่ได้ — ต้องเปลี่ยนไปใช้ non-parametric test แทน"
+  ],
+  answerIdx:1,
+  hints:[
+    "ถามให้ตรงจุด: α คืออะไร — เป็นสิ่งที่เรา<i>เลือกกำหนด</i> หรือเป็นสิ่งที่<i>ข้อมูลกำหนด</i>",
+    "ค่าวิกฤต t*(0.025, df) จะขยับตาม n แต่พื้นที่หางที่มันตัดไว้ยังคงเป็นเท่าใดเสมอ",
+    "กฎ: FWER ขึ้นกับ<b>จำนวนการทดสอบ</b> ไม่ใช่ขนาดตัวอย่าง — n ไปเกี่ยวกับความสามารถในการ<i>เจอผลจริง</i>",
+    "เฉลย: ข้อ 2 — <b>n ไม่เกี่ยวกับ multiplicity</b>"
+  ],
+  explain:"เมื่อ H₀ จริง การทดสอบที่ α = 0.05 จะปฏิเสธ 5% ของเวลา ไม่ว่า n = 20 หรือ n = 2,000 (ลองเลื่อนดูในหน้า “สำรวจ” — เปลี่ยนได้แค่ k เท่านั้น เพราะ n ไม่มีผลต่อ FWER). n ใหญ่ขึ้นช่วยเรื่อง power และทำให้ CI แคบลง — คนละปัญหากัน"
+ },
+ {
+  tag:"เลือกวิธีให้ถูก",
+  scenario:"RCT 4 แขนอีกเรื่องหนึ่ง วัดระดับ CRP (mg/L) ที่ 8 สัปดาห์ ตรวจข้อตกลงเบื้องต้นแล้วพบว่า <b>Levene’s test p = 0.002</b> และ SD ของแต่ละแขนต่างกันชัดเจน (3.1 / 5.8 / 4.0 / 9.2)",
+  qtext:"ชุดวิธีวิเคราะห์ที่เหมาะสมที่สุดคือข้อใด",
+  type:"mcq",
+  options:[
+    "one-way ANOVA (Fisher) + Tukey HSD",
+    "Welch ANOVA + Games-Howell",
+    "t-test ทุกคู่ + Bonferroni",
+    "one-way ANOVA + t-test ทุกคู่แบบไม่ปรับ"
+  ],
+  answerIdx:1,
+  hints:[
+    "แยกให้ออกเป็นสองคำถาม: (1) omnibus test ตัวไหน (2) post-hoc ตัวไหน — และทั้งสองต้องสอดคล้องกับข้อตกลงเดียวกัน",
+    "ทั้ง Fisher ANOVA และ Tukey HSD ใช้ MSE ที่ pool ความแปรปรวนจากทุกกลุ่ม — ถามว่าการ pool สมเหตุสมผลไหมเมื่อ SD ต่างกัน 3 เท่า",
+    "กฎ: ความแปรปรวนไม่เท่ากัน → ทั้ง omnibus และ post-hoc ต้องเลิก pool และใช้ df แบบ Welch–Satterthwaite",
+    "เฉลย: ข้อ 2 — <b>Welch ANOVA + Games-Howell</b>"
+  ],
+  explain:"Games-Howell คือคู่ post-hoc ของ Welch ANOVA: ใช้ SE แยกรายคู่และ df แบบ Welch–Satterthwaite ขณะที่ยังคุม FWER ด้วย studentized range. ใช้ Tukey ต่อจาก Welch ANOVA ถือว่าไม่สอดคล้องกัน เพราะ Tukey ตั้งอยู่บน pooled MSE. ข้อ 3 คุม FWER ได้จริงแต่อนุรักษ์นิยมเกินและยังใช้ pooled SE รายคู่อยู่"
+ }
+];
+
+var cur=0, score=0, hintLevel=0, solved=false, sel=-1;
+
+function renderItem(){
+  hintLevel=0; solved=false; sel=-1;
+  var it=ITEMS[cur];
+  el("counter").textContent="ข้อ "+(cur+1)+" / "+ITEMS.length;
+  el("progfill").style.width=(cur/ITEMS.length*100)+"%";
+  el("score").textContent="คะแนน "+score;
+  var html='<div class="card">';
+  html+='<span class="tag">'+it.tag+'</span>';
+  html+='<p class="scenario">'+it.scenario+'</p>';
+  html+=(it.svg||"");
+  html+='<p class="qtext">'+it.qtext+'</p>';
+  if(it.type==="numeric"){
+    html+='<div class="inrow"><input type="number" id="ans" step="any" placeholder="'+(it.ph||"พิมพ์คำตอบ")+'"><button class="act" id="check">ตรวจ</button></div>';
+  } else {
+    html+='<div class="mcq" id="mcq">';
+    for(var i=0;i<it.options.length;i++) html+='<button data-i="'+i+'">'+it.options[i]+'</button>';
+    html+='</div><div class="inrow"><button class="act" id="check" disabled>ตรวจ</button></div>';
+  }
+  html+='<ul class="hints" id="hints"></ul><div class="fb" id="fb"></div>';
+  html+='<div class="foot"><button class="ghost" id="hint">ขอคำใบ้</button>'
+      + '<button class="act" id="next" style="display:none">ข้อถัดไป →</button></div></div>';
+  el("stage").innerHTML=html;
+
+  if(it.type==="mcq"){
+    var btns=el("mcq").querySelectorAll("button");
+    btns.forEach(function(b){ b.onclick=function(){
+      if(solved) return;
+      btns.forEach(function(x){x.classList.remove("sel");});
+      b.classList.add("sel"); sel=parseInt(b.getAttribute("data-i"),10);
+      el("check").disabled=false;
+    };});
+  }
+  el("check").onclick=check;
+  el("hint").onclick=showHint;
+  el("next").onclick=nextItem;
+}
+
+function showHint(){
+  var it=ITEMS[cur];
+  if(hintLevel>=it.hints.length) return;
+  var li=document.createElement("li");
+  var label=(hintLevel===it.hints.length-1)?"เฉลย: ":"คำใบ้ "+(hintLevel+1)+": ";
+  li.innerHTML="<b>"+label+"</b>"+it.hints[hintLevel];
+  el("hints").appendChild(li);
+  hintLevel++;
+  if(hintLevel>=it.hints.length) el("hint").disabled=true;
+}
+
+function check(){
+  if(solved) return;
+  var it=ITEMS[cur], correct=false;
+  if(it.type==="numeric"){
+    var v=parseFloat(el("ans").value);
+    if(isNaN(v)) return;
+    correct=Math.abs(v-it.answer)<=it.tol;
+  } else {
+    if(sel<0) return;
+    correct=(sel===it.answerIdx);
+  }
+  var fb=el("fb");
+  if(correct){
+    solved=true;
+    var gained=(hintLevel===0);
+    if(gained) score++;
+    fb.className="fb ok";
+    fb.innerHTML="<b>ถูกต้อง!</b> "+it.explain+(gained?" <b>(+1 คะแนน)</b>":" (เปิดคำใบ้แล้ว จึงไม่ได้คะแนนข้อนี้)");
+    el("check").disabled=true; el("hint").disabled=true;
+    if(el("ans")) el("ans").disabled=true;
+    if(el("mcq")) el("mcq").querySelectorAll("button").forEach(function(b){b.disabled=true;});
+    el("next").style.display="inline-block";
+    el("score").textContent="คะแนน "+score;
+  } else {
+    fb.className="fb no";
+    fb.innerHTML="<b>ยังไม่ถูก</b> — ลองอีกครั้ง หรือกด ‘ขอคำใบ้’";
+  }
+}
+
+function nextItem(){ cur++; if(cur>=ITEMS.length) renderEnd(); else renderItem(); }
+
+function renderEnd(){
+  el("counter").textContent="จบแล้ว";
+  el("progfill").style.width="100%";
+  el("score").textContent="คะแนน "+score;
+  var msg = score===ITEMS.length ? "เยี่ยมมาก! ครบทุกข้อโดยไม่เปิดคำใบ้"
+          : score>=Math.ceil(ITEMS.length*0.6) ? "ทำได้ดี — ทบทวนข้อที่เปิดคำใบ้อีกนิด"
+          : "ลองอีกรอบเพื่อความมั่นใจ";
+  el("stage").innerHTML='<div class="card end"><div class="score">'+score+' <span class="dot">/</span> '+ITEMS.length+'</div>'
+    +'<p style="color:var(--muted);font-family:var(--ui);font-size:.9rem">'+msg+'</p>'
+    +'<button class="act" onclick="restart()">เริ่มใหม่</button></div>';
+}
+function restart(){ cur=0; score=0; renderItem(); }
+renderItem();
+</script>
+</body>
+</html>
